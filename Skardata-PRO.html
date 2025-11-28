@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛠️ Skärdata PRO</title>
+    <style>
+        :root {
+            --primary: #2563eb; --success: #059669; --warning: #d97706; --danger: #dc2626;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --card-bg: #ffffff; --input-bg: #f8fafc; --border: #e2e8f0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gradient); min-height: 100vh; padding: 15px; color: #1e293b;
+        }
+        .app { max-width: 440px; margin: 0 auto; background: var(--card-bg); 
+               border-radius: 24px; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; }
+        .app::before { content: ''; position: absolute; top: 0; left: 0; right: 0; 
+                       height: 6px; background: linear-gradient(90deg, var(--primary), var(--success), var(--warning)); border-radius: 24px 24px 0 0; }
+        
+        .tabs { display: flex; background: var(--input-bg); border-radius: 16px; margin-bottom: 24px; overflow: hidden; }
+        .tab { flex: 1; padding: 16px; background: none; border: none; font-weight: 700; 
+               font-size: 16px; cursor: pointer; transition: all 0.3s; }
+        .tab.active { background: var(--primary); color: white; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .header { text-align: center; padding: 20px 0; 
+                  background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+                  color: white; border-radius: 16px; margin-bottom: 24px; }
+        .header h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+        .header p { font-size: 14px; opacity: 0.95; font-weight: 500; }
+        
+        .input-group { background: var(--input-bg); padding: 24px; border-radius: 20px; 
+                       margin-bottom: 24px; border: 2px solid var(--border); }
+        .input-row { 
+            display: flex; align-items: center; margin-bottom: 18px; 
+            gap: 12px;
+        }
+        .input-row:last-child { margin-bottom: 0; }
+        .label { 
+            font-weight: 700; color: #1e40af; 
+            width: 45px;
+            font-size: 13px; display: flex; align-items: center; gap: 4px; 
+            flex-shrink: 0; justify-content: flex-end;
+        }
+        .icon { font-size: 14px; }
+        select, input[type="number"] { 
+            flex: 1; 
+            padding: 12px 14px; border: 2px solid var(--border); 
+            border-radius: 12px; font-size: 16px; background: white; 
+            font-weight: 600; transition: all 0.3s; 
+        }
+        select:focus, input[type="number"]:focus { 
+            border-color: var(--primary); outline: none; 
+            box-shadow: 0 0 0 4px rgba(37,99,235,0.1); 
+        }
+        .unit { 
+            font-size: 13px; color: #64748b; font-weight: 600; 
+            width: 45px;
+            text-align: center; flex-shrink: 0;
+        }
+        
+        .auto-calc { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
+                     padding: 20px; border-radius: 16px; margin-bottom: 28px; 
+                     border: 2px solid #bbf7d0; }
+        .auto-row { display: flex; justify-content: space-between; align-items: center; 
+                    margin-bottom: 14px; padding: 10px 0; border-bottom: 1px solid rgba(34,197,94,0.2); }
+        .auto-row:last-child { margin-bottom: 0; border-bottom: none; }
+        .auto-label { font-size: 15px; color: #166534; font-weight: 600; }
+        .auto-value { font-size: 16px; font-weight: 800; color: #15803d; 
+                      background: rgba(34,197,94,0.1); padding: 6px 12px; 
+                      border-radius: 20px; min-width: 70px; text-align: center; }
+        
+        .results { background: linear-gradient(135deg, var(--success) 0%, #10b981 100%); 
+                   border-radius: 24px; padding: 28px; color: white; margin-bottom: 28px; }
+        .result-item { display: flex; justify-content: space-between; align-items: center; 
+                       padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.15); }
+        .result-item:last-child { border-bottom: none; }
+        .result-label { font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .result-value { font-size: 28px; font-weight: 900; color: #fef3c7; 
+                        text-shadow: 0 4px 12px rgba(0,0,0,0.3); min-width: 120px; text-align: right; }
+        
+        .reset-btn { width: 100%; padding: 20px; background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+                     color: white; border: none; border-radius: 16px; font-size: 18px; font-weight: 700;
+                     cursor: pointer; transition: all 0.3s; }
+        .reset-btn:hover { transform: translateY(-1px); }
+        .reset-btn:active { transform: translateY(2px); }
+        
+        .info-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
+                    border-radius: 12px; padding: 12px; margin-top: 12px; font-size: 13px; 
+                    color: #065f46; text-align: center; }
+        
+        @media (max-width: 480px) {
+            .app { margin: 10px; padding: 20px; }
+            .input-row { flex-direction: column; gap: 12px; align-items: stretch; }
+            .label { width: auto; justify-content: flex-start; }
+            .unit { width: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>🛠️ Skärdata PRO</h1>
+            <p><strong>🔒 Säkra & Optimerade värden</strong></p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('frasning')">🪚 Fräsning</button>
+            <button class="tab" onclick="switchTab('gangfrasning')">🔩 Gängfräsning</button>
+            <button class="tab" onclick="switchTab('borrning')">🕳️ Borrning</button>
+        </div>
+
+        <!-- ================= FRÄSNING ================= -->
+        <div id="frasning" class="tab-content active">
+            <div class="input-group">
+                <div class="input-row">
+                    <label class="label"><span class="icon">🏭</span>Mat</label>
+                    <select id="frasning-material">
+                        <option value="mjukt" selected>Mjukt stål</option>
+                        <option value="toolox44">Toolox 44</option>
+                        <option value="hart">Hårt stål</option>
+                        <option value="aluminium">Aluminium</option>
+                        <option value="rostfritt">Rostfritt stål</option>
+                        <option value="hardat60">Härdat stål 60HRC</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">⚙️</span>Dia</label>
+                    <input type="number" id="frasning-diameter" value="12" step="0.1" min="0.5">
+                    <span class="unit">mm</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">⚡</span>Vc</label>
+                    <input type="number" id="frasning-vc" value="" step="1" min="1" placeholder="Auto">
+                    <span class="unit">m/min</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">📐</span>Ingr</label>
+                    <input type="number" id="frasning-ingrepp" value="10" step="1" min="1" max="100">
+                    <span class="unit">%</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">🦷</span>Z</label>
+                    <input type="number" id="frasning-tander" value="4" step="1" min="1">
+                    <span class="unit">st</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">🍽️</span>fz</label>
+                    <input type="number" id="frasning-fz" value="0.060" step="0.001" min="0.001">
+                    <span class="unit">mm/t</span>
+                </div>
+            </div>
+            <div class="auto-calc">
+                <div class="auto-row">
+                    <span class="auto-label">🎯 Vc Auto</span>
+                    <span class="auto-value" id="frasning-vcAuto">220</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">⚙️ fz-justering</span>
+                    <span class="auto-value" id="frasning-justeringFz">100%</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">🔧 fz justerad</span>
+                    <span class="auto-value" id="frasning-fzJust">0.060</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">📏 Ingrepp</span>
+                    <span class="auto-value" id="frasning-ingreppsFaktor">1.72</span>
+                </div>
+            </div>
+            <div class="results">
+                <div class="result-item">
+                    <span class="result-label"><span class="icon">⚙️</span> Varvtal</span>
+                    <span class="result-value" id="frasning-varvtal">5831</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label"><span class="icon">🚀</span> Matning</span>
+                    <span class="result-value" id="frasning-matning">2560</span>
+                </div>
+            </div>
+            <div class="info-box">✅ <strong>Fräsning klar! Auto-fz aktiv</strong></div>
+        </div>
+
+        <!-- GÄNGFRÄSNING & BORRNING (oförändrade) -->
+        <div id="gangfrasning" class="tab-content">
+            <div class="input-group">
+                <div class="input-row">
+                    <label class="label"><span class="icon">🏭</span>Mat</label>
+                    <select id="gangfrasning-material">
+                        <option value="mjukt" selected>Mjukt stål</option>
+                        <option value="toolox44">Toolox 44</option>
+                        <option value="hart">Hårt stål</option>
+                        <option value="aluminium">Aluminium</option>
+                        <option value="rostfritt">Rostfritt stål</option>
+                        <option value="hardat60">Härdat stål 60HRC</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">⚙️</span>Dia</label>
+                    <input type="number" id="gangfrasning-diameter" value="10" step="0.1" min="1">
+                    <span class="unit">mm</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">⚡</span>Vc</label>
+                    <input type="number" id="gangfrasning-vc" value="" step="1" min="1" placeholder="Auto">
+                    <span class="unit">m/min</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">📐</span>Ingr</label>
+                    <input type="number" id="gangfrasning-ingrepp" value="20" step="1" min="1" max="100">
+                    <span class="unit">%</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">🦷</span>Z</label>
+                    <input type="number" id="gangfrasning-tander" value="3" step="1" min="1">
+                    <span class="unit">st</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">🍽️</span>fz</label>
+                    <input type="number" id="gangfrasning-fz" value="0.14" step="0.01" min="0.01">
+                    <span class="unit">mm/t</span>
+                </div>
+            </div>
+            <div class="auto-calc">
+                <div class="auto-row">
+                    <span class="auto-label">🎯 Vc Auto</span>
+                    <span class="auto-value" id="gangfrasning-vcAuto">75</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">⚙️ fz-justering</span>
+                    <span class="auto-value" id="gangfrasning-justeringFz">100%</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">🔧 fz justerad</span>
+                    <span class="auto-value" id="gangfrasning-fzJust">0.14</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">📏 Ingrepp</span>
+                    <span class="auto-value" id="gangfrasning-ingreppsFaktor">1.67</span>
+                </div>
+            </div>
+            <div class="results">
+                <div class="result-item">
+                    <span class="result-label"><span class="icon">⚙️</span> Varvtal</span>
+                    <span class="result-value" id="gangfrasning-varvtal">2396</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label"><span class="icon">🚀</span> Matning</span>
+                    <span class="result-value" id="gangfrasning-matning">1004</span>
+                </div>
+            </div>
+            <div class="info-box">✅ <strong>Gängfräsning klar!</strong></div>
+        </div>
+
+        <div id="borrning" class="tab-content">
+            <div class="input-group">
+                <div class="input-row">
+                    <label class="label"><span class="icon">🏭</span>Mat</label>
+                    <select id="borrning-material">
+                        <option value="mjukt">Mjukt stål</option>
+                        <option value="toolox44">Toolox 44</option>
+                        <option value="hart" selected>Hårt stål</option>
+                        <option value="aluminium">Aluminium</option>
+                        <option value="rostfritt">Rostfritt stål</option>
+                        <option value="hardat60">Härdat stål 60HRC</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">📏</span>Längd</label>
+                    <select id="borrning-langd">
+                        <option value="1-4">1-4×D (140%)</option>
+                        <option value="4-5" selected>4-5×D (100%)</option>
+                        <option value="5-8">5-8×D (80%)</option>
+                        <option value="8-12">8-12×D (60%)</option>
+                        <option value="12+">>12×D (50%)</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">⚙️</span>Dia</label>
+                    <input type="number" id="borrning-diameter" value="4.3" step="0.05" min="0.5">
+                    <span class="unit">mm</span>
+                </div>
+                <div class="input-row">
+                    <label class="label"><span class="icon">⚡</span>Vc</label>
+                    <input type="number" id="borrning-vc" value="" step="1" min="1" placeholder="Auto">
+                    <span class="unit">m/min</span>
+                </div>
+            </div>
+            <div class="auto-calc">
+                <div class="auto-row">
+                    <span class="auto-label">🎯 Vc Auto</span>
+                    <span class="auto-value" id="borrning-vcAuto">45</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">🔧 fz bas</span>
+                    <span class="auto-value" id="borrning-fzBas">0.118</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">📏 Material</span>
+                    <span class="auto-value" id="borrning-materialFaktor">80%</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">📏 Längd</span>
+                    <span class="auto-value" id="borrning-langdFaktor">100%</span>
+                </div>
+                <div class="auto-row">
+                    <span class="auto-label">✅ fz justerad</span>
+                    <span class="auto-value" id="borrning-fzJust">0.09</span>
+                </div>
+            </div>
+            <div class="results">
+                <div class="result-item">
+                    <span class="result-label"><span class="icon">⚙️</span> Varvtal</span>
+                    <span class="result-value" id="borrning-varvtal">2105</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label"><span class="icon">🚀</span> Matning</span>
+                    <span class="result-value" id="borrning-matning">192</span>
+                </div>
+            </div>
+            <div class="info-box">✅ <strong>Borrning klar!</strong></div>
+        </div>
+
+        <button class="reset-btn" onclick="resetAll()">🔄 Återställ alla</button>
+    </div>
+
+    <script>
+        // ✅ KOMPLETT FZ-TABELL (från bild +5%)
+        const frasningFzTabell = {
+            0.5: 0.003, 1.0: 0.005, 1.5: 0.006, 2.0: 0.007, 2.5: 0.008,
+            3.0: 0.009, 4.0: 0.013, 5.0: 0.018, 6.0: 0.026, 8.0: 0.035,
+            10.0: 0.037, 12.0: 0.060, 14.0: 0.059, 16.0: 0.069, 18.0: 0.079,
+            20.0: 0.099, 25.0: 0.109
+        };
+
+        // Materialdata (oförändrad)
+        const frasningData = {
+            mjukt: { vcAuto: 220, justering: 100 },
+            toolox44: { vcAuto: 110, justering: 85 },
+            hart: { vcAuto: 160, justering: 80 },
+            aluminium: { vcAuto: 400, justering: 100 },
+            rostfritt: { vcAuto: 120, justering: 80 },
+            hardat60: { vcAuto: 60, justering: 60 }
+        };
+
+        const gangfrasningData = {
+            mjukt: { vcAuto: 75, justering: 100 },
+            toolox44: { vcAuto: 65, justering: 85 },
+            hart: { vcAuto: 45, justering: 80 },
+            aluminium: { vcAuto: 85, justering: 100 },
+            rostfritt: { vcAuto: 35, justering: 80 },
+            hardat60: { vcAuto: 25, justering: 60 }
+        };
+
+        const borrningData = {
+            mjukt: { vcAuto: 85, fzMaterial: 100 },
+            toolox44: { vcAuto: 70, fzMaterial: 85 },
+            hart: { vcAuto: 45, fzMaterial: 80 },
+            aluminium: { vcAuto: 95, fzMaterial: 100 },
+            rostfritt: { vcAuto: 35, fzMaterial: 80 },
+            hardat60: { vcAuto: 25, fzMaterial: 60 }
+        };
+
+        const fzBorrTabell = [
+            { dia: 1.0, fz: 0.065 }, { dia: 1.5, fz: 0.074 }, { dia: 2.0, fz: 0.083 },
+            { dia: 2.5, fz: 0.091 }, { dia: 3.0, fz: 0.100 }, { dia: 3.5, fz: 0.109 },
+            { dia: 4.0, fz: 0.118 }, { dia: 4.5, fz: 0.126 }, { dia: 5.0, fz: 0.135 },
+            { dia: 13.0, fz: 0.210 }, { dia: 13.5, fz: 0.215 }, { dia: 14.0, fz: 0.220 },
+            { dia: 20.0, fz: 0.300 }
+        ];
+
+        const borrLangdFaktorer = { '1-4': 140, '4-5': 100, '5-8': 80, '8-12': 60, '12+': 50 };
+
+        function getIngreppsFaktor(aeD) {
+            return Math.min(1.77, Math.max(0.7, 1.77 - 0.005 * aeD));
+        }
+
+        // ✅ NY INTERPOLATION FÖR FRÄSNING FZ
+        function getFrasningFz(diameter) {
+            const D = Math.round(diameter * 2) / 2; // Rundar till närmsta 0.5
+            if (frasningFzTabell[D]) return frasningFzTabell[D];
+            
+            // Interpolation mellan närmaste värden
+            const keys = Object.keys(frasningFzTabell).map(Number).sort((a, b) => a - b);
+            for (let i = 0; i < keys.length - 1; i++) {
+                if (D > keys[i] && D < keys[i + 1]) {
+                    const ratio = (D - keys[i]) / (keys[i + 1] - keys[i]);
+                    return frasningFzTabell[keys[i]] + (frasningFzTabell[keys[i + 1]] - frasningFzTabell[keys[i]]) * ratio;
+                }
+            }
+            
+            // Extrapolering utanför tabell
+            if (D < 0.5) return 0.003;
+            if (D > 25) return 0.109 + (D - 25) * 0.004;
+            
+            return 0.060; // Default
+        }
+
+        function setFrasningFzByDiameter() {
+            const D = parseFloat(document.getElementById('frasning-diameter').value) || 12;
+            const fz = getFrasningFz(D);
+            document.getElementById('frasning-fz').value = fz.toFixed(3);
+            calculateFrasning();
+        }
+
+        function calculateFrasning() {
+            const D = parseFloat(document.getElementById('frasning-diameter').value) || 12;
+            const vcInput = document.getElementById('frasning-vc').value.trim();
+            const aeD = parseFloat(document.getElementById('frasning-ingrepp').value) || 10;
+            const Z = parseInt(document.getElementById('frasning-tander').value) || 4;
+            const fzInput = parseFloat(document.getElementById('frasning-fz').value) || 0.060;
+            const materialKey = document.getElementById('frasning-material').value;
+            const material = frasningData[materialKey] || { justering: 100, vcAuto: 220 };
+            const Vc = vcInput ? parseFloat(vcInput) : material.vcAuto;
+
+            const justeringFz = material.justering / 100;
+            const fzJust = fzInput * justeringFz;
+            const IF = getIngreppsFaktor(aeD);
+            const n = (Vc * 1000) / (Math.PI * D);
+            const Vf = ((fzJust * IF) * n * Z) / 10;
+
+            document.getElementById('frasning-vcAuto').textContent = material.vcAuto;
+            document.getElementById('frasning-justeringFz').textContent = material.justering + '%';
+            document.getElementById('frasning-fzJust').textContent = fzJust.toFixed(3);
+            document.getElementById('frasning-ingreppsFaktor').textContent = IF.toFixed(2);
+            document.getElementById('frasning-varvtal').textContent = Math.round(n);
+            document.getElementById('frasning-matning').textContent = Math.round(Vf);
+        }
+
+        // Övriga funktioner (oförändrade)
+        function interpolateFz(diameter) {
+            let lower = fzBorrTabell[0], upper = fzBorrTabell[0];
+            for (let i = 0; i < fzBorrTabell.length; i++) {
+                if (fzBorrTabell[i].dia <= diameter) lower = fzBorrTabell[i];
+                if (fzBorrTabell[i].dia >= diameter) { upper = fzBorrTabell[i]; break; }
+            }
+            if (lower.dia === upper.dia) return lower.fz;
+            const ratio = (diameter - lower.dia) / (upper.dia - lower.dia);
+            return lower.fz + (upper.fz - lower.fz) * ratio;
+        }
+
+        function calculateBorrning() {
+            const D = parseFloat(document.getElementById('borrning-diameter').value) || 4.3;
+            const vcInput = document.getElementById('borrning-vc').value.trim();
+            const materialKey = document.getElementById('borrning-material').value;
+            const langdKey = document.getElementById('borrning-langd').value;
+            
+            const material = borrningData[materialKey];
+            const langdFaktor = borrLangdFaktorer[langdKey] / 100;
+            const materialFaktor = material.fzMaterial / 100;
+            
+            const Vc = vcInput ? parseFloat(vcInput) : material.vcAuto;
+            const fzBas = interpolateFz(D);
+            const fzJust = fzBas * materialFaktor * langdFaktor;
+            const n = (Vc * 1000) / (Math.PI * D);
+            const Vf = fzJust * n;
+
+            document.getElementById('borrning-vcAuto').textContent = material.vcAuto;
+            document.getElementById('borrning-fzBas').textContent = fzBas.toFixed(3);
+            document.getElementById('borrning-materialFaktor').textContent = material.fzMaterial + '%';
+            document.getElementById('borrning-langdFaktor').textContent = borrLangdFaktorer[langdKey] + '%';
+            document.getElementById('borrning-fzJust').textContent = fzJust.toFixed(2);
+            document.getElementById('borrning-varvtal').textContent = Math.round(n);
+            document.getElementById('borrning-matning').textContent = Math.round(Vf);
+        }
+
+        function calculateGangfrasning() {
+            const D = parseFloat(document.getElementById('gangfrasning-diameter').value) || 10;
+            const vcInput = document.getElementById('gangfrasning-vc').value.trim();
+            const aeD = parseFloat(document.getElementById('gangfrasning-ingrepp').value) || 20;
+            const Z = parseInt(document.getElementById('gangfrasning-tander').value) || 3;
+            const fzInput = parseFloat(document.getElementById('gangfrasning-fz').value) || 0.14;
+            const materialKey = document.getElementById('gangfrasning-material').value;
+            const material = gangfrasningData[materialKey] || { justering: 100, vcAuto: 75 };
+            const Vc = vcInput ? parseFloat(vcInput) : material.vcAuto;
+
+            const justeringFz = material.justering / 100;
+            const fzJust = fzInput * justeringFz;
+            const IF = getIngreppsFaktor(aeD);
+            const n = (Vc * 1000) / (Math.PI * D);
+            const Vf = ((fzJust * IF) * n * Z) / 10;
+
+            document.getElementById('gangfrasning-vcAuto').textContent = material.vcAuto;
+            document.getElementById('gangfrasning-justeringFz').textContent = material.justering + '%';
+            document.getElementById('gangfrasning-fzJust').textContent = fzJust.toFixed(2);
+            document.getElementById('gangfrasning-ingreppsFaktor').textContent = IF.toFixed(2);
+            document.getElementById('gangfrasning-varvtal').textContent = Math.round(n);
+            document.getElementById('gangfrasning-matning').textContent = Math.round(Vf);
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'frasning') calculateFrasning();
+            if (tabName === 'gangfrasning') calculateGangfrasning();
+            if (tabName === 'borrning') calculateBorrning();
+        }
+
+        // Event listeners
+        ['frasning-material', 'frasning-diameter', 'frasning-vc', 'frasning-ingrepp', 
+         'frasning-tander', 'frasning-fz'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateFrasning);
+        });
+        document.getElementById('frasning-diameter').addEventListener('change', setFrasningFzByDiameter);
+
+        ['gangfrasning-material', 'gangfrasning-diameter', 'gangfrasning-vc', 'gangfrasning-ingrepp', 
+         'gangfrasning-tander', 'gangfrasning-fz'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateGangfrasning);
+        });
+
+        ['borrning-material', 'borrning-langd', 'borrning-diameter', 'borrning-vc'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateBorrning);
+        });
+
+        function resetAll() {
+            document.getElementById('frasning-material').value = 'mjukt';
+            document.getElementById('frasning-diameter').value = '12';
+            document.getElementById('frasning-vc').value = '';
+            document.getElementById('frasning-ingrepp').value = '10';
+            document.getElementById('frasning-tander').value = '4';
+            document.getElementById('frasning-fz').value = '0.060';
+            
+            document.getElementById('gangfrasning-material').value = 'mjukt';
+            document.getElementById('gangfrasning-diameter').value = '10';
+            document.getElementById('gangfrasning-vc').value = '';
+            document.getElementById('gangfrasning-ingrepp').value = '20';
+            document.getElementById('gangfrasning-tander').value = '3';
+            document.getElementById('gangfrasning-fz').value = '0.14';
+            
+            document.getElementById('borrning-material').value = 'hart';
+            document.getElementById('borrning-langd').value = '4-5';
+            document.getElementById('borrning-diameter').value = '4.3';
+            document.getElementById('borrning-vc').value = '';
+            
+            setFrasningFzByDiameter();
+            calculateGangfrasning();
+            calculateBorrning();
+        }
+
+        // Starta
+        setFrasningFzByDiameter();
+        calculateGangfrasning();
+        calculateBorrning();
+    </script>
+</body>
+</html>
