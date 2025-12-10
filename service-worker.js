@@ -1,7 +1,7 @@
 // Fil: service-worker.js
 
 // 1. DEFINIERA CACHENAMN OCH FILER
-const CACHE_NAME = 'skardata-pwa-v2-links';
+const CACHE_NAME = 'skardata-pwa-v3-links'; // VIKTIGT: Uppdaterad version till v3!
 
 // Alla filer som appen behöver för att fungera offline
 const urlsToCache = [
@@ -16,10 +16,10 @@ const urlsToCache = [
     // Fonts
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
     
-    // Kalkylatorfragment (med de nya filnamnen)
+    // Kalkylatorfragment (Baserat på länkarna i din nya index.html)
     '/kalkylatorer/Planfrasning.html',
     '/kalkylatorer/HM&HSS-Borrning.html',
-    '/kalkylatorer/Dynamisk-Fräsning.html'
+    '/kalkylatorer/Milling_Data_Calculator-Pro.html' // NY FIL: Lades till här
 ];
 
 // 2. INSTALLERA SERVICE WORKER OCH CACHA STATISKA TILLGÅNGAR
@@ -28,7 +28,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache, adding essential files (v2).');
+        console.log('Opened cache, adding essential files (v3).');
         return cache.addAll(urlsToCache);
       })
       .then(() => {
