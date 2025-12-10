@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Fräsdatakalkylator Pro</title>
+    <title>Milling Data Calculator Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -37,7 +37,7 @@
         select, input[type=number] { 
             width:100%; padding:14px 16px; border:2px solid var(--border);
             border-radius:12px; background:var(--card); color:var(--text); 
-            font-size:16px; /* FIX: hindrar iOS-zoom */
+            font-size:16px;
             transition:all .3s; 
         }
         select:focus, input[type=number]:focus { outline:none; border-color:var(--primary);
@@ -64,14 +64,13 @@
             border: 2px solid var(--border);
             border-radius: 12px;
             font-size: 0.9rem;
-            max-width: 340px;
             line-height: 1.35;
         }
         body.dark .details-box { background:#334155; }
         .details-box p {
             margin: 4px 0 !important;
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between;
             gap: 12px;
             flex-wrap: nowrap;
         }
@@ -80,26 +79,35 @@
             font-weight: 600;
             min-width: 130px;
             flex-shrink: 0;
+            flex-basis: 50%;
         }
         .details-box span {
             color: var(--text);
             font-weight: 700;
             white-space: nowrap;
+            text-align: right;
+            flex-basis: 50%;
+        }
+        .details-box span sub {
+            font-weight: normal;
+            vertical-align: middle;
+            font-size: 85%;
+            padding-left: 2px;
         }
         footer {text-align:center; margin-top:50px; color:#555; font-size:0.95em;}
     </style>
 </head>
 <body>
 <div class="container">
-    <button class="theme-toggle" id="themeToggle">Moon</button>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
    
     <header>
-        <h1>Fräsdatakalkylator Pro</h1>
+        <h1>Milling Data Calculator Pro</h1>
     </header>
     <main>
-        <div class="section-title">Inmatning</div>
+        <div class="section-title">Input</div>
         <div class="form-group">
-            <label for="diameter">1. Fräsdiameter D [mm]:</label>
+            <label for="diameter">1. Cutter Diameter D [mm]:</label>
             <select id="diameter">
                 <option value="1">1 mm</option><option value="2">2 mm</option><option value="3">3 mm</option>
                 <option value="4">4 mm</option><option value="5">5 mm</option><option value="6">6 mm</option>
@@ -111,87 +119,122 @@
         <div class="form-group">
             <label for="material">2. Material:</label>
             <select id="material">
-                <option value="steel1080" selected>Stål (~1080 N/mm²)</option>
+                <option value="steel1080" selected>Steel (~1080 N/mm²)</option>
                 <option value="toolox44">Toolox 44 (~45 HRC)</option>
-                <option value="steel50hrc">Härdat stål 50 HRC</option>
-                <option value="steel60hrc">Härdat stål 60 HRC</option>
-                <option value="vanadis">Vanadis / Pulverstål</option>
-                <option value="nonferrous">Aluminium / Koppar</option>
+                <option value="steel50hrc">Hardened Steel 50 HRC</option>
+                <option value="steel60hrc">Hardened Steel 60 HRC</option>
+                <option value="vanadis">Vanadis / Powder Steel</option>
+                <option value="nonferrous">Aluminum / Copper</option>
             </select>
         </div>
         <div class="form-group">
-            <label for="minRadius">3. Minsta hörnradie [mm]:</label>
+            <label for="minRadius">3. Minimum Toolpath Radius [mm]:</label>
             <input type="number" id="minRadius" value="2" min="0.1" step="0.1">
         </div>
         <hr>
-        <div class="section-title">Skärdata (kan ändras)</div>
-        <div class="form-group"><label>Skärhastighet Vc [m/min]:</label><input type="number" id="vc" value="200"></div>
-        <div class="form-group"><label>Matning per skär fz [mm/z]:</label><input type="number" id="fzInitial" value="0.032" step="0.001"></div>
-        <div class="form-group"><label>Antal skär z:</label><input type="number" id="z" value="4"></div>
-        <div class="form-group"><label>Ingrepp ae [% av D]:</label><input type="number" id="aePercent" value="10" step="1"></div>
-        <div class="form-group"><label>Max varvtal [rpm]:</label><input type="number" id="maxRpm" value="12000"></div>
+        <div class="section-title">Cutting Data (Editable)</div>
+        <div class="form-group"><label>Cutting Speed Vc [m/min]:</label><input type="number" id="vc" value="200"></div>
+        <div class="form-group"><label>Feed per Tooth fz [mm/z]:</label><input type="number" id="fzInitial" value="0.032" step="0.001"></div>
+        <div class="form-group"><label>Number of Flutes z:</label><input type="number" id="z" value="4"></div>
+        <div class="form-group"><label>Radial Engagement ae [%]:</label><input type="number" id="aePercent" value="10" step="1"></div>
+        <div class="form-group"><label>Max RPM:</label><input type="number" id="maxRpm" value="12000"></div>
         <div class="results ready">
-            <h2>Resultat</h2>
-            <div class="result-line"><strong>Varvtal [rpm]:</strong> <span class="value" id="nResult">-</span></div>
-            <div class="result-line"><strong>Vf rak bana [mm/min]:</strong> <span class="value" id="vfResult">-</span></div>
-            <div class="result-line"><strong>Vf i hörn [mm/min]:</strong> <span class="value corner-value" id="vfCornerResult">-</span></div>
-            <div class="result-line"><strong>Ramp 2° helical [mm/min]:</strong> <span class="value ramp-value" id="vfRampResult">-</span></div>
+            <h2>Results</h2>
+            <div class="result-line"><strong>Spindle Speed [rpm]:</strong> <span class="value" id="nResult">-</span></div>
+            <div class="result-line"><strong>Roughing Feed (Straight) [mm/min]:</strong> <span class="value" id="vfResult">-</span></div>
+            <div class="result-line"><strong>Roughing Feed (Corner) [mm/min]:</strong> <span class="value corner-value" id="vfCornerResult">-</span></div>
+            <div class="result-line"><strong>Finishing Feed [mm/min]:</strong> <span class="value" id="vfFinishResult">-</span></div>
+            <div class="result-line"><strong>Ramping 2° Helical [mm/min]:</strong> <span class="value ramp-value" id="vfRampResult">-</span></div>
             <div class="details-box">
-                <p><strong>Korrigerad fz:</strong><span id="fzCorrectedResult">-</span> mm/z</p>
-                <p><strong>Material:</strong><span id="materialName">-</span></p>
-                <p><strong>Ingrepp ae:</strong><span id="aePercentValue">-</span>% av D</p>
-                <p><strong>Antal tänder z:</strong><span id="zValue">-</span></p>
-                <p><strong>Skärhastighet Vc:</strong><span id="vcValue">-</span> m/min</p>
+                <p><strong>Roughing Corrected fz:</strong><span id="fzCorrectedResult">-</span></p>
+                <p><strong>Finishing Corrected fz:</strong><span id="fzFinishCorrectedResult">-</span></p>
+                <p><strong>Roughing Radial Engagement ae:</strong><span id="aePercentValue">-</span></p>
+                <p><strong>Number of Flutes z:</strong><span id="zValue">-</span></p>
+                <p><strong>Cutting Speed Vc:</strong><span id="vcValue">-</span></p>
             </div>
         </div>
     </main>
 </div>
-<footer>Fräsdatakalkylator Pro – skapad av Jimmy Rauhala</footer>
+<footer>Milling Data Calculator Pro – created by Jimmy Rauhala</footer>
 <script>
+    const K_1000 = 1000;
+    const PI = Math.PI;
+    const FINISH_FACTOR = 1.5; 
+
+    const parseValue = (id, defaultValue = 0) => {
+        const value = parseFloat(document.getElementById(id).value);
+        return isNaN(value) ? defaultValue : value;
+    };
+    
+    const formatDecimal = (num, fixed) => {
+        return num.toFixed(fixed).replace(/\.?0+$/, "");
+    };
+
     const toolData = {
-        steel1080: {z_base:4, name:"Stål (~1080 N/mm²)", trochoidal:{vc:200, ae_percent:10, fz_table:{1:0.002,2:0.004,3:0.007,4:0.010,5:0.012,6:0.016,8:0.022,10:0.028,12:0.032,16:0.044,20:0.055}}},
+        steel1080: {z_base:4, name:"Steel (~1080 N/mm²)", trochoidal:{vc:200, ae_percent:10, fz_table:{1:0.002,2:0.004,3:0.007,4:0.010,5:0.012,6:0.016,8:0.022,10:0.028,12:0.032,16:0.044,20:0.055}}},
         toolox44: {z_base:4, name:"Toolox 44 (~45 HRC)", trochoidal:{vc:100, ae_percent:8, fz_table:{1:0.002,2:0.004,3:0.006,4:0.009,5:0.011,6:0.014,8:0.020,10:0.025,12:0.030,16:0.040,20:0.050}}},
-        steel50hrc:{z_base:4, name:"Härdat stål 50 HRC", trochoidal:{vc:80, ae_percent:5, fz_table:{1:0.0015,2:0.003,3:0.005,4:0.007,5:0.008,6:0.010,8:0.013,10:0.016,12:0.020,16:0.027,20:0.033}}},
-        steel60hrc:{z_base:4, name:"Härdat stål 60 HRC", trochoidal:{vc:40, ae_percent:3, fz_table:{1:0.0008,2:0.0016,3:0.0024,4:0.0032,5:0.004,6:0.005,8:0.006,10:0.008,12:0.010,16:0.013,20:0.017}}},
-        vanadis: {z_base:4, name:"Vanadis / Pulverstål", trochoidal:{vc:150, ae_percent:8, fz_table:{1:0.002,2:0.004,3:0.0065,4:0.0095,5:0.0115,6:0.015,8:0.021,10:0.0265,12:0.031,16:0.042,20:0.0525}}},
-        nonferrous:{z_base:3, name:"Aluminium / Koppar", trochoidal:{vc:450, ae_percent:10, fz_table:{1:0.006,2:0.012,3:0.018,4:0.024,5:0.030,6:0.038,8:0.050,10:0.061,12:0.070,16:0.093,20:0.116}}}
+        steel50hrc:{z_base:4, name:"Hardened Steel 50 HRC", trochoidal:{vc:80, ae_percent:5, fz_table:{1:0.0015,2:0.003,3:0.005,4:0.007,5:0.008,6:0.010,8:0.013,10:0.016,12:0.020,16:0.027,20:0.033}}},
+        steel60hrc:{z_base:4, name:"Hardened Steel 60 HRC", trochoidal:{vc:40, ae_percent:3, fz_table:{1:0.0008,2:0.0016,3:0.0024,4:0.0032,5:0.004,6:0.005,8:0.006,10:0.008,12:0.010,16:0.013,20:0.017}}},
+        vanadis: {z_base:4, name:"Vanadis / Powder Steel", trochoidal:{vc:150, ae_percent:8, fz_table:{1:0.002,2:0.004,3:0.0065,4:0.0095,5:0.0115,6:0.015,8:0.021,10:0.0265,12:0.031,16:0.042,20:0.0525}}},
+        nonferrous:{z_base:3, name:"Aluminum / Copper", trochoidal:{vc:450, ae_percent:10, fz_table:{1:0.006,2:0.012,3:0.018,4:0.024,5:0.030,6:0.038,8:0.050,10:0.061,12:0.070,16:0.093,20:0.116}}}
     };
     let userEdited = {vc:false, fz:false, z:false, ae:false};
 
     function updateStandardValues() {
         const mat = document.getElementById('material').value;
-        const D = parseFloat(document.getElementById('diameter').value);
+        const D = parseValue('diameter');
         const d = toolData[mat]?.trochoidal;
-        if (!d) return;
+        if (!d || D <= 0) return;
+
         if (!userEdited.vc) document.getElementById('vc').value = d.vc;
-        // FIX: bättre trimning av decimaler
-        if (!userEdited.fz) document.getElementById('fzInitial').value = (d.fz_table[D]||0.032).toFixed(4).replace(/\.?0+$/, "");
+        if (!userEdited.fz) document.getElementById('fzInitial').value = formatDecimal(d.fz_table[D] || 0.032, 4);
         if (!userEdited.z) document.getElementById('z').value = toolData[mat].z_base;
         if (!userEdited.ae) document.getElementById('aePercent').value = d.ae_percent;
         calculate();
     }
 
     function calculate() {
-        const D = parseFloat(document.getElementById('diameter').value);
-        const Vc = parseFloat(document.getElementById('vc').value)||0;
-        const fz = parseFloat(document.getElementById('fzInitial').value)||0;
-        const z = parseInt(document.getElementById('z').value)||1;
-        const aePercent = parseFloat(document.getElementById('aePercent').value)||10;
-        const maxRpm = parseFloat(document.getElementById('maxRpm').value)||0;
-        const R_min = parseFloat(document.getElementById('minRadius').value)||999;
+        const D = parseValue('diameter');
+        const Vc = parseValue('vc');
+        const fz = parseValue('fzInitial');
+        const z = Math.round(parseValue('z', 1));
+        const aePercent = parseValue('aePercent');
+        const maxRpm = parseValue('maxRpm');
+        const R_min = parseValue('minRadius');
         const material = document.getElementById('material').value;
-        if (D<=0) return;
 
-        let n = (Vc*1000)/(Math.PI*D);
-        if (maxRpm>0 && n>maxRpm) n = maxRpm;
+        if (D <= 0 || Vc <= 0 || z <= 0 || fz <= 0) {
+            document.getElementById('nResult').textContent = 'N/A';
+            document.getElementById('vfResult').textContent = 'N/A';
+            document.getElementById('vfCornerResult').textContent = 'N/A';
+            document.getElementById('vfFinishResult').textContent = 'N/A'; 
+            document.getElementById('vfRampResult').textContent = 'N/A';
+            document.getElementById('fzCorrectedResult').textContent = '-';
+            document.getElementById('fzFinishCorrectedResult').textContent = '-'; // Nollställer ny rad
+            document.getElementById('aePercentValue').textContent = '-';
+            document.getElementById('zValue').textContent = '-';
+            document.getElementById('vcValue').textContent = '-';
+            return;
+        }
 
-        const ae = D * aePercent/100;
+        let n = (Vc * K_1000) / (PI * D);
+        if (maxRpm > 0 && n > maxRpm) n = maxRpm;
+
+        const ae = D * aePercent / 100;
+        
+        // Korrigerad fz för grovfräsning (Roughing)
         let fz_korr = fz;
         if (ae < D && ae > 0) fz_korr = fz * Math.sqrt(D / ae);
+        
+        // Korrigerad fz för finfräsning (Finishing) = fz * FINISH_FACTOR
+        const fz_finish_korr = fz * FINISH_FACTOR;
 
         const Vf_normal = Math.round(n * fz_korr * z);
         let Vf_corner = Vf_normal;
-        if (R_min>0 && 2*R_min < ae) Vf_corner = Math.round(Vf_normal * (2*R_min)/ae);
+        if (R_min > 0 && 2 * R_min < ae) Vf_corner = Math.round(Vf_normal * (2 * R_min) / ae);
+        
+        // Feed Rate för finskär: N * (fz * FINISH_FACTOR) * z
+        const Vf_finish = Math.round(n * fz_finish_korr * z); 
 
         let rampFactor = 1.8;
         if (['steel50hrc','steel60hrc'].includes(material)) rampFactor = 2.0;
@@ -200,15 +243,22 @@
         const Vf_ramp = Math.round(Vf_normal / rampFactor);
 
         document.getElementById('nResult').textContent = Math.round(n);
-        // FIX: använder samma robusta trimning här också
-        document.getElementById('fzCorrectedResult').textContent = fz_korr.toFixed(3).replace(/\.?0+$/, "");
+        
+        // Ändring 4 & 6: Output för korrigerad fz för Roughing och Finishing
+        document.getElementById('fzCorrectedResult').innerHTML = formatDecimal(fz_korr, 3) + ' <sub>mm/z</sub>';
+        document.getElementById('fzFinishCorrectedResult').innerHTML = formatDecimal(fz_finish_korr, 3) + ' <sub>mm/z</sub>';
+
+        // Ändring 2, 3 & 1: Output för Vf
         document.getElementById('vfResult').textContent = Vf_normal;
         document.getElementById('vfCornerResult').textContent = Vf_corner;
+        document.getElementById('vfFinishResult').textContent = Vf_finish; 
         document.getElementById('vfRampResult').textContent = Vf_ramp;
-        document.getElementById('materialName').textContent = toolData[material].name;
-        document.getElementById('aePercentValue').textContent = aePercent;
+        
+        // Ändring 5: Output för Roughing Radial Engagement ae
+        document.getElementById('aePercentValue').innerHTML = aePercent + ' <sub>%</sub>';
+        
         document.getElementById('zValue').textContent = z;
-        document.getElementById('vcValue').textContent = Vc;
+        document.getElementById('vcValue').innerHTML = Vc + ' <sub>m/min</sub>';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -225,14 +275,24 @@
     });
 
     const toggle = document.getElementById('themeToggle');
+    
+    const updateThemeIcon = () => {
+        if (document.body.classList.contains('dark')) {
+            toggle.textContent = '☀️';
+        } else {
+            toggle.textContent = '🌙';
+        }
+    };
+
     toggle.addEventListener('click', () => {
         document.body.classList.toggle('dark');
-        toggle.textContent = document.body.classList.contains('dark') ? 'Sun' : 'Moon';
+        updateThemeIcon();
     });
+
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.body.classList.add('dark');
-        toggle.textContent = 'Sun';
     }
+    updateThemeIcon();
 </script>
 </body>
 </html>
