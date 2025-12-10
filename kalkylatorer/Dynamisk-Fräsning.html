@@ -128,9 +128,21 @@
             </select>
         </div>
         <div class="form-group">
-            <label for="minRadius">3. Minimum Toolpath Radius [mm]:</label>
-            <input type="number" id="minRadius" value="2" min="0.1" step="any">
+            <label for="rampAngle">3. Ramping Angle (alpha) [°]:</label>
+            <select id="rampAngle">
+                <option value="0.5">0.5°</option>
+                <option value="1.0">1.0°</option>
+                <option value="1.5">1.5°</option>
+                <option value="2.0" selected>2.0°</option>
+                <option value="2.5">2.5°</option>
+                <option value="3.0">3.0°</option>
+                <option value="4.0">4.0°</option>
+                <option value="5.0">5.0°</option>
+                <option value="7.0">7.0°</option>
+                <option value="10.0">10.0°</option>
+            </select>
         </div>
+
         <hr>
         <div class="section-title">Cutting Data (Editable)</div>
         <div class="form-group"><label>Cutting Speed Vc [m/min]:</label><input type="number" id="vc" value="200" step="any"></div>
@@ -144,14 +156,15 @@
         <div class="results ready">
             <h2>Results</h2>
             <div class="result-line"><strong>Spindle Speed [rpm]:</strong> <span class="value" id="nResult">-</span></div>
-            <div class="result-line"><strong>Roughing Feed (Straight) [mm/min]:</strong> <span class="value" id="vfResult">-</span></div>
-            <div class="result-line"><strong>Roughing Feed (Corner) [mm/min]:</strong> <span class="value corner-value" id="vfCornerResult">-</span></div>
+            <div class="result-line"><strong>Roughing Feed [mm/min]:</strong> <span class="value" id="vfResult">-</span></div>
+            <div class="result-line" style="display: none;"><strong>Roughing Feed (Corner) [mm/min]:</strong> <span class="value corner-value" id="vfCornerResult">-</span></div>
             <div class="result-line"><strong>Finishing Feed [mm/min]:</strong> <span class="value" id="vfFinishResult">-</span></div>
-            <div class="result-line"><strong>Ramping 2° Helical [mm/min]:</strong> <span class="value ramp-value" id="vfRampResult">-</span></div>
+            <div class="result-line"><strong>Ramping <span id="alphaDisplay">2.0°</span> Helical [mm/min]:</strong> <span class="value ramp-value" id="vfRampResult">-</span></div>
             <div class="details-box">
                 <p><strong>Roughing fz:</strong><span id="fzCorrectedResult">-</span></p>
                 <p><strong>Finishing fz:</strong><span id="fzFinishCorrectedResult">-</span></p>
                 <p><strong>Stepover ae:</strong><span id="aePercentValue">-</span></p>
+                <p><strong>Toolpath Radius:</strong><span id="rMinSafeResult">-</span></p> 
                 <p><strong>Vc:</strong><span id="vcValue">-</span></p>
             </div>
         </div>
@@ -162,6 +175,7 @@
     const K_1000 = 1000;
     const PI = Math.PI;
     const FINISH_FACTOR = 1.5; 
+    const RAMP_ANGLE_SENSITIVITY = 5; // %-justering per 1° skillnad från basvinkeln
 
     const parseValue = (id, defaultValue = 0) => {
         const value = parseFloat(document.getElementById(id).value);
@@ -178,22 +192,79 @@
         steel50hrc:{z_base:4, name:"Hardened Steel 50 HRC", trochoidal:{vc:80, ae_percent:5, fz_table:{1:0.0015,2:0.003,3:0.005,4:0.007,5:0.008,6:0.010,8:0.013,10:0.016,12:0.020,16:0.027,20:0.033}}},
         steel60hrc:{z_base:4, name:"Hardened Steel 60 HRC", trochoidal:{vc:40, ae_percent:3, fz_table:{1:0.0008,2:0.0016,3:0.0024,4:0.0032,5:0.004,6:0.005,8:0.006,10:0.008,12:0.010,16:0.013,20:0.017}}},
         vanadis: {z_base:4, name:"Vanadis / Powder Steel", trochoidal:{vc:150, ae_percent:8, fz_table:{1:0.002,2:0.004,3:0.0065,4:0.0095,5:0.0115,6:0.015,8:0.021,10:0.0265,12:0.031,16:0.042,20:0.0525}}},
-        nonferrous:{z_base:3, name:"Aluminum / Copper", trochoidal:{vc:450, ae_percent:10, fz_table:{1:0.006,2:0.012,3:0.018,4:0.024,5:0.030,6:0.038,8:0.050,10:0.061,12:0.070,16:0.093,20:0.116}}}
+        nonferrous:{z_base:4, name:"Aluminum / Copper", trochoidal:{vc:450, ae_percent:10, fz_table:{1:0.006,2:0.012,3:0.018,4:0.024,5:0.030,6:0.038,8:0.050,10:0.061,12:0.070,16:0.093,20:0.116}}}
     };
+
+    const rampDefaults = {
+        steel1080:  { defaultAngle: 2.0, baseFactor: 1.8, minAngle: 1.0, maxAngle: 5.0 }, 
+        toolox44:   { defaultAngle: 2.0, baseFactor: 1.9, minAngle: 1.0, maxAngle: 3.0 }, 
+        steel50hrc: { defaultAngle: 1.5, baseFactor: 2.25, minAngle: 1.0, maxAngle: 3.0 },
+        steel60hrc: { defaultAngle: 1.0, baseFactor: 2.7, minAngle: 1.0, maxAngle: 2.0 }, 
+        vanadis:    { defaultAngle: 2.0, baseFactor: 1.85, minAngle: 1.0, maxAngle: 3.0 },
+        nonferrous: { defaultAngle: 5.0, baseFactor: 1.5, minAngle: 2.0, maxAngle: 10.0 } 
+    };
+
     let userEdited = {vc:false, fz:false, z:false, ae:false};
+
+    function updateRampAngleOptions(material) {
+        const rampData = rampDefaults[material];
+        const min = rampData.minAngle;
+        const max = rampData.maxAngle;
+        const select = document.getElementById('rampAngle');
+        
+        Array.from(select.options).forEach(option => {
+            const angle = parseFloat(option.value);
+            
+            if (angle >= min && angle <= max) {
+                option.style.display = ''; 
+            } else {
+                option.style.display = 'none';
+            }
+        });
+
+        const currentAngle = parseValue('rampAngle');
+        if (currentAngle < min || currentAngle > max) {
+            select.value = rampData.defaultAngle.toFixed(1);
+        }
+    }
 
     function updateStandardValues() {
         const mat = document.getElementById('material').value;
         const D = parseValue('diameter');
         const d = toolData[mat]?.trochoidal;
+        const rampData = rampDefaults[mat];
+        
         if (!d || D <= 0) return;
 
         if (!userEdited.vc) document.getElementById('vc').value = d.vc;
         if (!userEdited.fz) document.getElementById('fzInitial').value = formatDecimal(d.fz_table[D] || 0.032, 4);
         if (!userEdited.z) document.getElementById('z').value = toolData[mat].z_base;
         if (!userEdited.ae) document.getElementById('aePercent').value = d.ae_percent;
+        
+        updateRampAngleOptions(mat); 
+        document.getElementById('rampAngle').value = rampData.defaultAngle.toFixed(1);
+        
         calculate();
     }
+
+    function calculateRampFactor(material, selectedAngle) {
+        const rampData = rampDefaults[material];
+        const baseFactor = rampData.baseFactor;
+        const defaultAngle = rampData.defaultAngle;
+        
+        let P_base = 100 / baseFactor;
+        const angleDiff = selectedAngle - defaultAngle;
+        const P_adjustment = angleDiff * RAMP_ANGLE_SENSITIVITY;
+
+        let P_final = P_base - P_adjustment; 
+        
+        P_final = Math.max(P_final, 30); 
+        P_final = Math.min(P_final, 70); 
+
+        const rampFactor = 100 / P_final;
+        return rampFactor;
+    }
+
 
     function calculate() {
         const D = parseValue('diameter');
@@ -202,19 +273,24 @@
         const z = Math.round(parseValue('z', 1));
         const aePercent = parseValue('aePercent');
         const maxRpm = parseValue('maxRpm');
-        const R_min = parseValue('minRadius');
         const material = document.getElementById('material').value;
         const aeWarningElement = document.getElementById('aeWarning');
+        const selectedRampAngle = parseValue('rampAngle');
+        const rMinSafeResultElement = document.getElementById('rMinSafeResult');
+
+        document.getElementById('alphaDisplay').textContent = selectedRampAngle.toFixed(1) + '°';
+
 
         if (D <= 0 || Vc <= 0 || z <= 0 || fz <= 0) {
             document.getElementById('nResult').textContent = 'N/A';
             document.getElementById('vfResult').textContent = 'N/A';
-            document.getElementById('vfCornerResult').textContent = 'N/A';
+            document.getElementById('vfCornerResult').textContent = 'N/A'; // Behåll tilldelning för säkerhets skull
             document.getElementById('vfFinishResult').textContent = 'N/A'; 
             document.getElementById('vfRampResult').textContent = 'N/A';
             document.getElementById('fzCorrectedResult').textContent = '-';
             document.getElementById('fzFinishCorrectedResult').textContent = '-'; 
             document.getElementById('aePercentValue').textContent = '-';
+            rMinSafeResultElement.textContent = '-'; 
             document.getElementById('vcValue').textContent = '-';
             aeWarningElement.style.display = 'none';
             return;
@@ -223,20 +299,16 @@
         let n = (Vc * K_1000) / (PI * D);
         if (maxRpm > 0 && n > maxRpm) n = maxRpm;
 
-        // Beräkna rått ae-värde och sätt en golvnivå för att förhindra division med noll
         const ae_raw = D * aePercent / 100;
-        const ae = Math.max(ae_raw, 0.000001); // Sätter golv för att garantera att ae > 0 för division
+        const ae = Math.max(ae_raw, 0.000001); 
 
         let fz_korr = fz;
         
         if (aePercent > 50) {
-            // VARNING OCH BEGRÄNSNING: För ae > 50% sätts fz_korr = fz.
             fz_korr = fz;
             aeWarningElement.textContent = 'WARNING: Stepover ae > 50%. Chip thinning correction is disabled.';
             aeWarningElement.style.display = 'block';
         } else if (ae_raw > 0 && ae_raw < D) {
-            // Standard korrigering för chip thinning (ae <= 50%). 
-            // Använder det golvade ae-värdet för divisionen, men ae_raw för checken (> 0).
             fz_korr = fz * Math.sqrt(D / ae);
             aeWarningElement.style.display = 'none';
         } else {
@@ -246,17 +318,14 @@
         const fz_finish_korr = fz * FINISH_FACTOR;
 
         const Vf_normal = Math.round(n * fz_korr * z);
-        let Vf_corner = Vf_normal;
-        // Notera: Corner-reduction använder ae_raw (D * aePercent / 100), vilket är korrekt.
-        if (R_min > 0 && 2 * R_min < ae_raw) Vf_corner = Math.round(Vf_normal * (2 * R_min) / ae_raw);
+        let Vf_corner = Vf_normal; // Värdet behålls
         
         const Vf_finish = Math.round(n * fz_finish_korr * z); 
 
-        let rampFactor = 1.8;
-        if (['steel50hrc','steel60hrc'].includes(material)) rampFactor = 2.0;
-        else if (material==='vanadis') rampFactor = 1.9;
-        else if (material==='nonferrous') rampFactor = 1.6;
+        const rampFactor = calculateRampFactor(material, selectedRampAngle);
         const Vf_ramp = Math.round(Vf_normal / rampFactor);
+
+        const R_min_safe = (D * aePercent) / 200; 
 
         document.getElementById('nResult').textContent = Math.round(n);
         
@@ -264,11 +333,13 @@
         document.getElementById('fzFinishCorrectedResult').innerHTML = formatDecimal(fz_finish_korr, 3) + ' <sub>mm/z</sub>';
 
         document.getElementById('vfResult').textContent = Vf_normal;
-        document.getElementById('vfCornerResult').textContent = Vf_corner;
+        document.getElementById('vfCornerResult').textContent = Vf_corner; // Fortsätt att tilldela till dolt element
         document.getElementById('vfFinishResult').textContent = Vf_finish; 
         document.getElementById('vfRampResult').textContent = Vf_ramp;
         
         document.getElementById('aePercentValue').innerHTML = aePercent + ' <sub>%</sub>';
+        
+        rMinSafeResultElement.innerHTML = '≥' + formatDecimal(R_min_safe, 2) + ' <sub>mm</sub>'; 
         
         document.getElementById('vcValue').innerHTML = Vc + ' <sub>m/min</sub>';
     }
@@ -281,8 +352,11 @@
             if (el.id==='aePercent') userEdited.ae = true;
             calculate();
         }));
+        
         document.getElementById('material').addEventListener('change', updateStandardValues);
         document.getElementById('diameter').addEventListener('change', updateStandardValues);
+        document.getElementById('rampAngle').addEventListener('change', calculate);
+        
         updateStandardValues();
     });
 
