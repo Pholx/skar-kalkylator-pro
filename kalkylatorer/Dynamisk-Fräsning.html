@@ -129,15 +129,18 @@
         </div>
         <div class="form-group">
             <label for="minRadius">3. Minimum Toolpath Radius [mm]:</label>
-            <input type="number" id="minRadius" value="2" min="0.1" step="0.1">
+            <input type="number" id="minRadius" value="2" min="0.1" step="any">
         </div>
         <hr>
         <div class="section-title">Cutting Data (Editable)</div>
-        <div class="form-group"><label>Cutting Speed Vc [m/min]:</label><input type="number" id="vc" value="200"></div>
-        <div class="form-group"><label>Feed per Tooth fz [mm/z]:</label><input type="number" id="fzInitial" value="0.032" step="0.001"></div>
-        <div class="form-group"><label>Number of Flutes z:</label><input type="number" id="z" value="4"></div>
-        <div class="form-group"><label>Radial Engagement ae [%]:</label><input type="number" id="aePercent" value="10" step="1"></div>
-        <div class="form-group"><label>Max RPM:</label><input type="number" id="maxRpm" value="12000"></div>
+        <div class="form-group"><label>Cutting Speed Vc [m/min]:</label><input type="number" id="vc" value="200" step="any"></div>
+        <div class="form-group"><label>Feed per Tooth fz [mm/z]:</label><input type="number" id="fzInitial" value="0.032" step="any"></div>
+        <div class="form-group"><label>Number of Flutes z:</label><input type="number" id="z" value="4" step="any"></div>
+        <div class="form-group"><label>Radial Engagement ae [%]:</label><input type="number" id="aePercent" value="10" step="any"></div>
+        <div class="form-group"><label>Max RPM:</label><input type="number" id="maxRpm" value="12000" step="any"></div>
+        
+        <p id="aeWarning" style="color:var(--warning); font-weight:600; margin-bottom:15px; display:none;"></p>
+
         <div class="results ready">
             <h2>Results</h2>
             <div class="result-line"><strong>Spindle Speed [rpm]:</strong> <span class="value" id="nResult">-</span></div>
@@ -146,11 +149,10 @@
             <div class="result-line"><strong>Finishing Feed [mm/min]:</strong> <span class="value" id="vfFinishResult">-</span></div>
             <div class="result-line"><strong>Ramping 2° Helical [mm/min]:</strong> <span class="value ramp-value" id="vfRampResult">-</span></div>
             <div class="details-box">
-                <p><strong>Roughing Corrected fz:</strong><span id="fzCorrectedResult">-</span></p>
-                <p><strong>Finishing Corrected fz:</strong><span id="fzFinishCorrectedResult">-</span></p>
-                <p><strong>Roughing Radial Engagement ae:</strong><span id="aePercentValue">-</span></p>
-                <p><strong>Number of Flutes z:</strong><span id="zValue">-</span></p>
-                <p><strong>Cutting Speed Vc:</strong><span id="vcValue">-</span></p>
+                <p><strong>Roughing fz:</strong><span id="fzCorrectedResult">-</span></p>
+                <p><strong>Finishing fz:</strong><span id="fzFinishCorrectedResult">-</span></p>
+                <p><strong>Stepover ae:</strong><span id="aePercentValue">-</span></p>
+                <p><strong>Vc:</strong><span id="vcValue">-</span></p>
             </div>
         </div>
     </main>
@@ -202,6 +204,7 @@
         const maxRpm = parseValue('maxRpm');
         const R_min = parseValue('minRadius');
         const material = document.getElementById('material').value;
+        const aeWarningElement = document.getElementById('aeWarning');
 
         if (D <= 0 || Vc <= 0 || z <= 0 || fz <= 0) {
             document.getElementById('nResult').textContent = 'N/A';
@@ -210,30 +213,43 @@
             document.getElementById('vfFinishResult').textContent = 'N/A'; 
             document.getElementById('vfRampResult').textContent = 'N/A';
             document.getElementById('fzCorrectedResult').textContent = '-';
-            document.getElementById('fzFinishCorrectedResult').textContent = '-'; // Nollställer ny rad
+            document.getElementById('fzFinishCorrectedResult').textContent = '-'; 
             document.getElementById('aePercentValue').textContent = '-';
-            document.getElementById('zValue').textContent = '-';
             document.getElementById('vcValue').textContent = '-';
+            aeWarningElement.style.display = 'none';
             return;
         }
 
         let n = (Vc * K_1000) / (PI * D);
         if (maxRpm > 0 && n > maxRpm) n = maxRpm;
 
-        const ae = D * aePercent / 100;
-        
-        // Korrigerad fz för grovfräsning (Roughing)
+        // Beräkna rått ae-värde och sätt en golvnivå för att förhindra division med noll
+        const ae_raw = D * aePercent / 100;
+        const ae = Math.max(ae_raw, 0.000001); // Sätter golv för att garantera att ae > 0 för division
+
         let fz_korr = fz;
-        if (ae < D && ae > 0) fz_korr = fz * Math.sqrt(D / ae);
         
-        // Korrigerad fz för finfräsning (Finishing) = fz * FINISH_FACTOR
+        if (aePercent > 50) {
+            // VARNING OCH BEGRÄNSNING: För ae > 50% sätts fz_korr = fz.
+            fz_korr = fz;
+            aeWarningElement.textContent = 'WARNING: Stepover ae > 50%. Chip thinning correction is disabled.';
+            aeWarningElement.style.display = 'block';
+        } else if (ae_raw > 0 && ae_raw < D) {
+            // Standard korrigering för chip thinning (ae <= 50%). 
+            // Använder det golvade ae-värdet för divisionen, men ae_raw för checken (> 0).
+            fz_korr = fz * Math.sqrt(D / ae);
+            aeWarningElement.style.display = 'none';
+        } else {
+            aeWarningElement.style.display = 'none';
+        }
+        
         const fz_finish_korr = fz * FINISH_FACTOR;
 
         const Vf_normal = Math.round(n * fz_korr * z);
         let Vf_corner = Vf_normal;
-        if (R_min > 0 && 2 * R_min < ae) Vf_corner = Math.round(Vf_normal * (2 * R_min) / ae);
+        // Notera: Corner-reduction använder ae_raw (D * aePercent / 100), vilket är korrekt.
+        if (R_min > 0 && 2 * R_min < ae_raw) Vf_corner = Math.round(Vf_normal * (2 * R_min) / ae_raw);
         
-        // Feed Rate för finskär: N * (fz * FINISH_FACTOR) * z
         const Vf_finish = Math.round(n * fz_finish_korr * z); 
 
         let rampFactor = 1.8;
@@ -244,20 +260,16 @@
 
         document.getElementById('nResult').textContent = Math.round(n);
         
-        // Ändring 4 & 6: Output för korrigerad fz för Roughing och Finishing
         document.getElementById('fzCorrectedResult').innerHTML = formatDecimal(fz_korr, 3) + ' <sub>mm/z</sub>';
         document.getElementById('fzFinishCorrectedResult').innerHTML = formatDecimal(fz_finish_korr, 3) + ' <sub>mm/z</sub>';
 
-        // Ändring 2, 3 & 1: Output för Vf
         document.getElementById('vfResult').textContent = Vf_normal;
         document.getElementById('vfCornerResult').textContent = Vf_corner;
         document.getElementById('vfFinishResult').textContent = Vf_finish; 
         document.getElementById('vfRampResult').textContent = Vf_ramp;
         
-        // Ändring 5: Output för Roughing Radial Engagement ae
         document.getElementById('aePercentValue').innerHTML = aePercent + ' <sub>%</sub>';
         
-        document.getElementById('zValue').textContent = z;
         document.getElementById('vcValue').innerHTML = Vc + ' <sub>m/min</sub>';
     }
 
