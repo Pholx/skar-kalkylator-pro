@@ -28,7 +28,14 @@
         .theme-toggle:hover { background:rgba(0,0,0,.1); }
         header { background:linear-gradient(135deg,#667eea,#764ba2); color:white;
                  padding:30px 24px; text-align:center; }
-        h1 { font-size:1.8rem; font-weight:700; margin-bottom:8px; }
+        h1 { font-size:1.8rem; font-weight:700; margin-bottom:4px; } 
+        .header-subtext { /* Stil för subrubriken */
+            font-size: 0.85rem;
+            font-weight: 400; /* Lättare vikt */
+            opacity: 0.9;     /* Gör den något svagare */
+            margin-top: 0;
+            color: white; /* Samma färg som <h1> */
+        }
         main { padding:32px 24px; }
         .section-title { font-size:1.25rem; font-weight:600; color:var(--primary); margin:24px 0 16px; }
         hr { border:none; height:2px; background:linear-gradient(to right,transparent,var(--border),transparent); margin:20px 0; }
@@ -72,23 +79,22 @@
             display: flex;
             justify-content: space-between;
             gap: 12px;
-            flex-wrap: nowrap; /* Behåll nowrap på p för att hålla strong och span på samma rad initialt */
+            flex-wrap: nowrap;
         }
         .details-box strong {
             color: var(--text-light);
             font-weight: 600;
-            /* Borttaget: min-width: 130px; */
-            flex-shrink: 1; /* Tillåt att rubriken krymper */
+            flex-shrink: 1;
             flex-basis: 50%;
-            white-space: normal; /* Tillåt radbrytning */
+            white-space: normal;
         }
         .details-box span {
             color: var(--text);
             font-weight: 700;
-            white-space: nowrap; /* Behåll värdet på en rad */
+            white-space: nowrap;
             text-align: right;
-            flex-shrink: 0; /* Förhindra att värdet krymper */
-            flex-basis: auto; /* Låt värdet ta minimalt nödvändigt utrymme */
+            flex-shrink: 0;
+            flex-basis: auto;
         }
         .details-box span sub {
             font-weight: normal;
@@ -105,6 +111,7 @@
    
     <header>
         <h1>Milling Data Calculator Pro</h1>
+        <h2 class="header-subtext">Milling – Solid Carbide End Mill (1–20 mm)</h2> 
     </header>
     <main>
         <div class="section-title">Input</div>
