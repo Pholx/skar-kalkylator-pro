@@ -72,21 +72,23 @@
             display: flex;
             justify-content: space-between;
             gap: 12px;
-            flex-wrap: nowrap;
+            flex-wrap: nowrap; /* Behåll nowrap på p för att hålla strong och span på samma rad initialt */
         }
         .details-box strong {
             color: var(--text-light);
             font-weight: 600;
-            min-width: 130px;
-            flex-shrink: 0;
+            /* Borttaget: min-width: 130px; */
+            flex-shrink: 1; /* Tillåt att rubriken krymper */
             flex-basis: 50%;
+            white-space: normal; /* Tillåt radbrytning */
         }
         .details-box span {
             color: var(--text);
             font-weight: 700;
-            white-space: nowrap;
+            white-space: nowrap; /* Behåll värdet på en rad */
             text-align: right;
-            flex-basis: 50%;
+            flex-shrink: 0; /* Förhindra att värdet krymper */
+            flex-basis: auto; /* Låt värdet ta minimalt nödvändigt utrymme */
         }
         .details-box span sub {
             font-weight: normal;
@@ -174,7 +176,6 @@
 <script>
     const K_1000 = 1000;
     const PI = Math.PI;
-    // FINISH_FACTOR (1.5) är borttagen.
 
     const parseValue = (id, defaultValue = 0) => {
         const value = parseFloat(document.getElementById(id).value);
