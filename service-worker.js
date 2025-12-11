@@ -17,7 +17,7 @@ const urlsToCache = [
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
     
     // Kalkylatorfragment (Uppdaterad lista v5)
-    '/kalkylatorer/Face Milling_Data_Calculator-Pro.html',  // <--- DEN NYA FILEN
+    '/kalkylatorer/Face_Milling_Data_Calculator-Pro.html',  // <--- DEN NYA FILEN
     '/kalkylatorer/Drilling_Data_Calculator-Pro.html',      // (Från v4)
     '/kalkylatorer/Milling_Data_Calculator-Pro.html'        // (Från v3)
 ];
@@ -74,3 +74,4 @@ self.addEventListener('activate', event => {
     })
   );
 });
+
