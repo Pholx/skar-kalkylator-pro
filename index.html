@@ -19,7 +19,7 @@
         }
         @media (prefers-color-scheme: dark) {
             :root { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --text-light: #94a3b8;
-                    --border: #334155; --shadow: 0 10px 20px rgba(0,0,0,0.4); }
+                    --border: #334155; --shadow: 0 2px 4px rgba(0,0,0,0.4); }
         }
 
         /* === GLOBAL LAYOUT === */
@@ -44,10 +44,17 @@
         .calc-item:hover { background:var(--primary-light); border-color:var(--primary); transform: translateY(-1px); }
         .calc-item:active { transform: translateY(0); }
         
-        /* ÅTGÄRD FÖR ATT TA BORT KVARSTÅENDE MARKERING VID BACK */
+        /* FÖRSTÄRKT FIX FÖR ATT TA BORT KVARSTÅENDE MARKERING VID BACK */
+        /* Nollställer färgen på besökta länkar (viktigt på mobil) */
         .calc-item:visited { color: inherit; } 
         .calc-item:visited span { color: var(--text); } 
-        .calc-item:focus { outline: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } 
+        /* Tvingar bakgrunden och kanten till normalt läge vid fokus/back-navigering */
+        .calc-item:focus { 
+            outline: none; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: var(--card) !important; 
+            border-color: var(--border) !important;
+        } 
         
         .calc-item span { font-weight: 600; font-size: 1.1rem; }
         .calc-item::after { content: '→'; font-size: 1.5rem; color: var(--primary); }
@@ -99,7 +106,7 @@
     function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Notera: Service Worker-stigen måste fortfarande peka på roten (/)
+                // Notera: Service Worker-stigen måste inkludera den nya katalogvägen
                 navigator.serviceWorker.register('/Milling_Drilling_Cutting_Data_Calculators/service-worker.js')
                 .then(registration => {
                     console.log('ServiceWorker registration successful:', registration.scope);
