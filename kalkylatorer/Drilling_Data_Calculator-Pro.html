@@ -152,23 +152,21 @@
             <label for="material">Workpiece Material</label>
             <select id="material">
                 <option value="">-- Select Material --</option>
-                <option value="soft_steel">Steel: Soft (&lt; 1100 N/mm²)</option>
-                <option value="hard_steel">Steel: Hard (&gt; 1100 N/mm²)</option>
-                <option value="stainless_austenitic">Stainless: Austenitic (&lt; 850 N/mm²)</option>
-                <option value="toolox_44">Steel: Toolox 44 (&lt; 50 HRC)</option>
-                <option value="hardened_steel_65">Steel: Hardened (&lt;65 HRC)</option>
+                <option value="soft_steel">Steel: Soft (< 1100 N/mm²)</option>
+                <option value="hard_steel">Steel: Hard (> 1100 N/mm²)</option>
+                <option value="stainless_austenitic">Stainless: Austenitic (< 850 N/mm²)</option>
+                <option value="toolox_44">Steel: Toolox 44 (< 50 HRC)</option>
+                <option value="hardened_steel_65">Steel: Hardened (<65 HRC)</option>
                 <option value="aluminium">Aluminum</option>
-                </select>
+            </select>
         </div>
 
         <div class="form-group">
             <label for="length">Drill Length (L/D)</label>
             <select id="length">
                 <option value="">-- Select Length --</option>
-                <option value="3xD">3xD</option>
                 <option value="5xD">5xD</option>
                 <option value="8xD">8xD</option>
-                <option value="10xD">10xD</option>
                 <option value="12xD">12xD</option>
                 <option value="15xD">15xD</option>
             </select>
@@ -196,17 +194,86 @@
 
 
 <script>
-    // === ALL DATA (Translated Material Keys and Names) ===
+    // === 1. ORIGINAL HM BASE DATA (3xD och 10xD borttagna) ===
+    const FdTableHM_Original = [
+        { D: 0.5, '5xD': 0.040, '8xD': 0.035, '12xD': 0.030, '15xD': 0.025 },
+        { D: 1.0, '5xD': 0.055, '8xD': 0.045, '12xD': 0.035, '15xD': 0.030 },
+        { D: 2.0, '5xD': 0.075, '8xD': 0.065, '12xD': 0.055, '15xD': 0.050 },
+        { D: 2.5, '5xD': 0.090, '8xD': 0.075, '12xD': 0.065, '15xD': 0.055 },
+        { D: 3.0, '5xD': 0.100, '8xD': 0.080, '12xD': 0.070, '15xD': 0.060 },
+        { D: 4.0, '5xD': 0.110, '8xD': 0.100, '12xD': 0.090, '15xD': 0.080 },
+        { D: 5.0, '5xD': 0.140, '8xD': 0.120, '12xD': 0.100, '15xD': 0.090 },
+        { D: 6.0, '5xD': 0.160, '8xD': 0.140, '12xD': 0.110, '15xD': 0.100 },
+        { D: 8.0, '5xD': 0.210, '8xD': 0.180, '12xD': 0.140, '15xD': 0.120 },
+        { D: 10.0, '5xD': 0.270, '8xD': 0.240, '12xD': 0.200, '15xD': 0.180 },
+        { D: 12.0, '5xD': 0.300, '8xD': 0.270, '12xD': 0.230, '15xD': 0.200 },
+        { D: 14.0, '5xD': 0.330, '8xD': 0.290, '12xD': 0.250, '15xD': 0.220 },
+        { D: 16.0, '5xD': 0.350, '8xD': 0.310, '12xD': 0.270, '15xD': 0.240 },
+        { D: 18.0, '5xD': 0.370, '8xD': 0.320, '12xD': 0.280, '15xD': 0.250 },
+        { D: 20.0, '5xD': 0.400, '8xD': 0.350, '12xD': 0.300, '15xD': 0.270 },
+        { D: 22.0, '5xD': 0.420, '8xD': 0.370, '12xD': 0.320, '15xD': 0.290 },
+        { D: 25.0, '5xD': 0.460, '8xD': 0.400, '12xD': 0.330, '15xD': 0.280 }
+    ];
+
+    // === 2. KURVJUSTERINGSLOGIK (Inga ändringar) ===
+    const curveAdjustmentPoints = [
+        { D: 2.0, factor: 0.90 }, 
+        { D: 3.0, factor: 0.85 }, 
+        { D: 6.0, factor: 0.70 }, 
+        { D: 8.0, factor: 0.65 }, 
+        { D: 11.0, factor: 0.55 }, 
+        { D: 13.0, factor: 0.50 }, 
+        { D: 18.0, factor: 0.45 } 
+    ];
+
+    function getCurveAdjustmentFactor(D) {
+        if (D <= curveAdjustmentPoints[0].D) {
+            return curveAdjustmentPoints[0].factor; 
+        }
+        
+        if (D >= curveAdjustmentPoints[curveAdjustmentPoints.length - 1].D) {
+            return curveAdjustmentPoints[curveAdjustmentPoints.length - 1].factor; 
+        }
+        
+        for (let i = 1; i < curveAdjustmentPoints.length; i++) {
+            const lower = curveAdjustmentPoints[i - 1];
+            const upper = curveAdjustmentPoints[i];
+            
+            if (D <= upper.D) {
+                const ratio = (D - lower.D) / (upper.D - lower.D);
+                return lower.factor + ratio * (upper.factor - lower.factor);
+            }
+        }
+        
+        return curveAdjustmentPoints[curveAdjustmentPoints.length - 1].factor;
+    }
+    
+    // === 3. FUNKTION FÖR ATT SKAPA DEN AKTIVA HM-TABELLEN (Använder nu endast befintliga nycklar) ===
+    function getAdjustedHMTable() {
+        return FdTableHM_Original.map(row => {
+            const factor = getCurveAdjustmentFactor(row.D);
+            return {
+                D: row.D,
+                // Nycklarna 3xD och 10xD finns inte längre i FdTableHM_Original
+                '5xD': parseFloat((row['5xD'] * factor).toFixed(4)),
+                '8xD': parseFloat((row['8xD'] * factor).toFixed(4)),
+                '12xD': parseFloat((row['12xD'] * factor).toFixed(4)),
+                '15xD': parseFloat((row['15xD'] * factor).toFixed(4)),
+            };
+        });
+    }
+
+    // === 4. MATERIALDATA (HM Vc-värden uppdaterade, Fm aluminium uppdaterad) ===
     const materialDataHM = {
-        "soft_steel": { name: "Steel: Soft (< 1100 N/mm²)", Fm: 1.0, Vc_safe: 60 },
-        "hard_steel": { name: "Steel: Hard (> 1100 N/mm²)", Fm: 0.9, Vc_safe: 40 },
-        "toolox_44": { name: "Steel: Toolox 44 (< 50 HRC)", Fm: 0.7, Vc_safe: 20 },
-        "stainless_austenitic": { name: "Stainless: Austenitic (< 850 N/mm²)", Fm: 0.9, Vc_safe: 30 },
-        "hardened_steel_65": { name: "Steel: Hardened (<65 HRC)", Fm: 0.6, Vc_safe: 15 },
-        "aluminium": { name: "Aluminum", Fm: 1.4, Vc_safe: 200 }
-        // "copper" BORTTAGET HÄR
+        "soft_steel": { name: "Steel: Soft (< 1100 N/mm²)", Fm: 1.0, Vc_safe: 90 }, // Vc: 90
+        "hard_steel": { name: "Steel: Hard (> 1100 N/mm²)", Fm: 0.9, Vc_safe: 60 }, // Vc: 60
+        "toolox_44": { name: "Steel: Toolox 44 (< 50 HRC)", Fm: 0.77, Vc_safe: 25 }, // Vc: 25
+        "stainless_austenitic": { name: "Stainless: Austenitic (< 850 N/mm²)", Fm: 0.9, Vc_safe: 20 }, // Vc: 20
+        "hardened_steel_65": { name: "Steel: Hardened (<65 HRC)", Fm: 0.6, Vc_safe: 10 }, // Vc: 10
+        "aluminium": { name: "Aluminum", Fm: 1.913, Vc_safe: 300 } // Vc: 300, Fm: 1.913
     };
 
+    // === 5. HSS DATA (3xD och 10xD borttagna) ===
     const materialDataHSS = {
         "soft_steel": { name: "Steel: Soft (< 1100 N/mm²)", Fm: 1.0, Vc_safe: 20 },
         "hard_steel": { name: "Steel: Hard (> 1100 N/mm²)", Fm: 0.9, Vc_safe: 15 },
@@ -214,59 +281,58 @@
         "stainless_austenitic": { name: "Stainless: Austenitic (< 850 N/mm²)", Fm: 0.8, Vc_safe: 12 },
         "hardened_steel_65": { name: "Steel: Hardened (<65 HRC)", Fm: 0.6, Vc_safe: 5 },
         "aluminium": { name: "Aluminum", Fm: 1.4, Vc_safe: 60 }
-        // "copper" BORTTAGET HÄR
     };
 
-    const FdTableHM = [
-        { D: 0.5, '3xD': 0.05, '5xD': 0.04, '8xD': 0.035, '10xD': 0.032, '12xD': 0.030, '15xD': 0.025 },
-        { D: 1.0, '3xD': 0.07, '5xD': 0.055, '8xD': 0.045, '10xD': 0.040, '12xD': 0.035, '15xD': 0.030 },
-        { D: 2.0, '3xD': 0.09, '5xD': 0.075, '8xD': 0.065, '10xD': 0.060, '12xD': 0.055, '15xD': 0.050 },
-        { D: 2.5, '3xD': 0.11, '5xD': 0.09, '8xD': 0.075, '10xD': 0.070, '12xD': 0.065, '15xD': 0.055 },
-        { D: 3.0, '3xD': 0.12, '5xD': 0.10, '8xD': 0.08, '10xD': 0.075, '12xD': 0.07, '15xD': 0.06 },
-        { D: 4.0, '3xD': 0.14, '5xD': 0.11, '8xD': 0.10, '10xD': 0.095, '12xD': 0.09, '15xD': 0.08 },
-        { D: 5.0, '3xD': 0.17, '5xD': 0.14, '8xD': 0.12, '10xD': 0.11, '12xD': 0.10, '15xD': 0.09 },
-        { D: 6.0, '3xD': 0.20, '5xD': 0.16, '8xD': 0.14, '10xD': 0.12, '12xD': 0.11, '15xD': 0.10 },
-        { D: 8.0, '3xD': 0.26, '5xD': 0.21, '8xD': 0.18, '10xD': 0.16, '12xD': 0.14, '15xD': 0.12 },
-        { D: 10.0, '3xD': 0.34, '5xD': 0.27, '8xD': 0.24, '10xD': 0.22, '12xD': 0.20, '15xD': 0.18 },
-        { D: 12.0, '3xD': 0.38, '5xD': 0.30, '8xD': 0.27, '10xD': 0.25, '12xD': 0.23, '15xD': 0.20 },
-        { D: 14.0, '3xD': 0.41, '5xD': 0.33, '8xD': 0.29, '10xD': 0.27, '12xD': 0.25, '15xD': 0.22 },
-        { D: 16.0, '3xD': 0.44, '5xD': 0.35, '8xD': 0.31, '10xD': 0.29, '12xD': 0.27, '15xD': 0.24 },
-        { D: 18.0, '3xD': 0.46, '5xD': 0.37, '8xD': 0.32, '10xD': 0.30, '12xD': 0.28, '15xD': 0.25 },
-        { D: 20.0, '3xD': 0.50, '5xD': 0.40, '8xD': 0.35, '10xD': 0.32, '12xD': 0.30, '15xD': 0.27 },
-        { D: 22.0, '3xD': 0.53, '5xD': 0.42, '8xD': 0.37, '10xD': 0.34, '12xD': 0.32, '15xD': 0.29 },
-        { D: 25.0, '3xD': 0.58, '5xD': 0.46, '8xD': 0.40, '10xD': 0.36, '12xD': 0.33, '15xD': 0.28 }
-    ];
-
     const FdTableHSS = [
-        { D: 0.5, '3xD': 0.040, '5xD': 0.028, '8xD': 0.024, '10xD': 0.022, '12xD': 0.020, '15xD': 0.016 },
-        { D: 1.0, '3xD': 0.045, '5xD': 0.031, '8xD': 0.027, '10xD': 0.025, '12xD': 0.022, '15xD': 0.018 },
-        { D: 2.0, '3xD': 0.060, '5xD': 0.042, '8xD': 0.036, '10xD': 0.033, '12xD': 0.030, '15xD': 0.024 },
-        { D: 2.5, '3xD': 0.070, '5xD': 0.049, '8xD': 0.042, '10xD': 0.038, '12xD': 0.035, '15xD': 0.028 },
-        { D: 3.0, '3xD': 0.075, '5xD': 0.052, '8xD': 0.045, '10xD': 0.041, '12xD': 0.037, '15xD': 0.030 },
-        { D: 4.0, '3xD': 0.080, '5xD': 0.056, '8xD': 0.048, '10xD': 0.044, '12xD': 0.040, '15xD': 0.032 },
-        { D: 5.0, '3xD': 0.090, '5xD': 0.063, '8xD': 0.054, '10xD': 0.049, '12xD': 0.045, '15xD': 0.036 },
-        { D: 6.0, '3xD': 0.150, '5xD': 0.105, '8xD': 0.090, '10xD': 0.082, '12xD': 0.075, '15xD': 0.060 },
-        { D: 8.0, '3xD': 0.200, '5xD': 0.140, '8xD': 0.120, '10xD': 0.110, '12xD': 0.100, '15xD': 0.080 },
-        { D: 10.0, '3xD': 0.230, '5xD': 0.161, '8xD': 0.138, '10xD': 0.126, '12xD': 0.115, '15xD': 0.092 },
-        { D: 12.0, '3xD': 0.280, '5xD': 0.196, '8xD': 0.168, '10xD': 0.154, '12xD': 0.140, '15xD': 0.112 },
-        { D: 14.0, '3xD': 0.310, '5xD': 0.217, '8xD': 0.186, '10xD': 0.170, '12xD': 0.155, '15xD': 0.124 },
-        { D: 16.0, '3xD': 0.330, '5xD': 0.231, '8xD': 0.198, '10xD': 0.181, '12xD': 0.165, '15xD': 0.132 },
-        { D: 18.0, '3xD': 0.350, '5xD': 0.245, '8xD': 0.210, '10xD': 0.192, '12xD': 0.175, '15xD': 0.140 },
-        { D: 20.0, '3xD': 0.370, '5xD': 0.259, '8xD': 0.222, '10xD': 0.203, '12xD': 0.185, '15xD': 0.148 },
-        { D: 22.0, '3xD': 0.380, '5xD': 0.266, '8xD': 0.228, '10xD': 0.209, '12xD': 0.190, '15xD': 0.152 },
-        { D: 25.0, '3xD': 0.380, '5xD': 0.266, '8xD': 0.228, '10xD': 0.209, '12xD': 0.190, '15xD': 0.152 }
+        { D: 0.5, '5xD': 0.028, '8xD': 0.024, '12xD': 0.020, '15xD': 0.016 },
+        { D: 1.0, '5xD': 0.031, '8xD': 0.027, '12xD': 0.022, '15xD': 0.018 },
+        { D: 2.0, '5xD': 0.042, '8xD': 0.036, '12xD': 0.030, '15xD': 0.024 },
+        { D: 2.5, '5xD': 0.049, '8xD': 0.042, '12xD': 0.035, '15xD': 0.028 },
+        { D: 3.0, '5xD': 0.052, '8xD': 0.045, '12xD': 0.037, '15xD': 0.030 },
+        { D: 4.0, '5xD': 0.056, '8xD': 0.048, '12xD': 0.040, '15xD': 0.032 },
+        { D: 5.0, '5xD': 0.063, '8xD': 0.054, '12xD': 0.045, '15xD': 0.036 },
+        { D: 6.0, '5xD': 0.105, '8xD': 0.090, '12xD': 0.075, '15xD': 0.060 },
+        { D: 8.0, '5xD': 0.140, '8xD': 0.120, '12xD': 0.100, '15xD': 0.080 },
+        { D: 10.0, '5xD': 0.161, '8xD': 0.138, '12xD': 0.115, '15xD': 0.092 },
+        { D: 12.0, '5xD': 0.196, '8xD': 0.168, '12xD': 0.140, '15xD': 0.112 },
+        { D: 14.0, '5xD': 0.217, '8xD': 0.186, '12xD': 0.155, '15xD': 0.124 },
+        { D: 16.0, '5xD': 0.231, '8xD': 0.198, '12xD': 0.165, '15xD': 0.132 },
+        { D: 18.0, '5xD': 0.245, '8xD': 0.210, '12xD': 0.175, '15xD': 0.140 },
+        { D: 20.0, '5xD': 0.259, '8xD': 0.222, '12xD': 0.185, '15xD': 0.148 },
+        { D: 22.0, '5xD': 0.266, '8xD': 0.228, '12xD': 0.190, '15xD': 0.152 },
+        { D: 25.0, '5xD': 0.266, '8xD': 0.228, '12xD': 0.190, '15xD': 0.152 }
     ];
-
+    // === CALCULATOR LOGIC (Inga ändringar) ===
     function interpolateFd(D, lengthType, toolType) {
-        const table = toolType === 'HM' ? FdTableHM : FdTableHSS;
+        let table;
+        if (toolType === 'HM') {
+            table = getAdjustedHMTable(); // Använder den kurvjusterade tabellen
+        } else {
+            table = FdTableHSS; // HSS använder den ojusterade
+        }
+
         if (D < 0.5) D = 0.5;
         if (D > 25) D = 25;
         const lower = table.slice().reverse().find(row => row.D <= D);
         const upper = table.find(row => row.D > D);
+        
         if (!upper || lower.D === D) return lower[lengthType];
+        
         const ratio = (D - lower.D) / (upper.D - lower.D);
         return parseFloat((lower[lengthType] + ratio * (upper[lengthType] - lower[lengthType])).toFixed(4));
     }
+
+    function getAdjustmentFactorDisplay(D, toolType) {
+        if (toolType === 'HSS') {
+            return '1.00 (No reduction)';
+        }
+        
+        // Curve adjustment
+        const factor = getCurveAdjustmentFactor(D);
+        const reduction = ((1 - factor) * 100).toFixed(0);
+        return `${factor.toFixed(2)} (${reduction}% reduction)`;
+    }
+
 
     function calculateCuttingData() {
         const toolType = document.getElementById('toolType').value;
@@ -301,18 +367,24 @@
         }
 
         const data = toolType === 'HM' ? materialDataHM : materialDataHSS;
-        // Kontrollera om materialnyckeln finns (koppar finns inte längre)
+        // Kontrollera om materialnyckeln finns
         if (!data[materialKey]) {
              resultsDiv.innerHTML = `<p class="missing">Selected material is not supported for this tool type.</p>`;
              return;
         }
 
         const mat = data[materialKey];
+        // HM använder den kurvjusterade Fd
         const Fd = interpolateFd(diameter, lengthType, toolType);
+        
+        // Final Matning fz = F_material * F_diameter
         const Fn = mat.Fm * Fd;
+        
+        // Varvtal n = (Vc * 1000) / (PI * D)
         const n_calc = (mat.Vc_safe * 1000) / (Math.PI * diameter);
 
         let n_final = Math.round(n_calc);
+        // Bordmatning Vf = fz * n
         let Vf_final = Math.round(Fn * n_calc);
         let capped = false;
 
@@ -321,6 +393,12 @@
             Vf_final = Math.round(Fn * n_final);
             capped = true;
         }
+        
+        const adjFactorDisplay = getAdjustmentFactorDisplay(diameter, toolType);
+        const materialFactorDisplay = mat.Fm.toFixed(3); // Display the material factor
+        // Denna variabel används inte i visningen, men kan användas för felsökning/detaljer
+        // const totalFeedReduction = (1 - (mat.Fm * getCurveAdjustmentFactor(diameter))).toFixed(3);
+
 
         resultsDiv.classList.add('ready');
         resultsDiv.innerHTML = `
@@ -338,6 +416,8 @@
                 <p><strong>fz (Feed per rev):</strong><span>${Fn.toFixed(3)} <sub>mm</sub></span></p>
                 <p><strong>Cutting Speed (Vc):</strong><span>${mat.Vc_safe} <sub>m/min</sub></span></p>
                 <p><strong>Diameter Factor (Fd):</strong><span>${Fd.toFixed(4)}</span></p>
+                <p><strong>Applied Adj. Factor (Tool):</strong><span>${adjFactorDisplay}</span></p>
+                <p><strong>Applied Adj. Factor (Material, Fm):</strong><span>${materialFactorDisplay}</span></p>
             </div>
         `;
     }
