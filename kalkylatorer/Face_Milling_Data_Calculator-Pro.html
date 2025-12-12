@@ -6,6 +6,7 @@
     <title>Cutting Data Calculator - Face Milling</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* --- Theme Variables --- */
         :root {
             --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --text-light: #64748b;
             --primary: #3b82f6; --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
@@ -17,14 +18,20 @@
         }
         body.dark { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --text-light: #94a3b8;
                     --border: #334155; --shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        /* --- Base Styles --- */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text);
                min-height:100vh; padding:20px; transition:all .4s; }
-        .container { max-width:560px; margin:40px auto; background:var(--card);
+        .container { max-width:560px; margin:40px auto 0; background:var(--card); 
                      border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);
                      position:relative; }
-        .theme-toggle { position:absolute; top:16px; right:16px; background:none; border:none;
-                        font-size:1.5rem; cursor:pointer; padding:8px; border-radius:50%; }
+        /* Theme Toggle FIX */
+        .theme-toggle { 
+            position:absolute; top:16px; right:16px; background:none; border:none;
+            font-size:1.5rem; 
+            cursor:pointer; padding:8px; border-radius:50%;
+            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+        }
         .theme-toggle:hover { background:rgba(0,0,0,.1); }
         header { background:linear-gradient(135deg,#667eea,#764ba2); color:white;
                  padding:30px 24px; text-align:center; position:relative; }
@@ -44,26 +51,30 @@
                    transition:all .3s; }
         .geo-btn.active { background:var(--primary); color:white; }
         
-        /* --- Result Styling --- */
+        /* --- Results Styling --- */
         .results { 
             margin-top: 32px; 
             padding: 24px; 
-            background: #e9f7ff; 
+            background: var(--card); 
             border-radius: 14px; 
-            border: 2px solid #b3e0ff;
+            border: 2px solid var(--border);
             min-height: 120px; 
             transition: all .4s; 
-            color: #1e293b;
+            color: var(--text);
         }
-        body.dark .results { 
-            background: #1e293b; 
-            border-color: #334155; 
-            color: #f1f5f9;
+        /* Color when results are ready */
+        .results.ready { 
+            background: #ecfdf5; 
+            border-color: #34d399; 
+        }
+        body.dark .results.ready { 
+            background: #064e3b; 
+            border-color: #10b981; 
         }
         
         .results h2 { 
             font-size: 1.4rem; 
-            color: #10b981; 
+            color: var(--success); 
             margin-bottom: 20px; 
             text-align: center; 
             font-weight: 700;
@@ -76,32 +87,36 @@
             font-size: 1.1rem; 
             border-bottom: 1px dashed #c0c0c0;
         }
-        body.dark .result-line { border-bottom: 1px dashed #475569; }
+        .results.ready .result-line { border-bottom: 1px dashed #a7f3d0; } 
+        body.dark .results.ready .result-line { border-bottom: 1px dashed #34d399; }
 
-        .result-line:last-child { border-bottom: none; }
+        .results > .result-line:last-of-type { border-bottom: none; }
+        
         .result-line strong { 
-            color: #1e293b; 
+            color: var(--text-light); 
             font-weight: 600;
         }
-        body.dark .result-line strong { color: #f1f5f9; }
-
-        .value { font-weight: 700; color: #1e293b; }
-        body.dark .value { color: #f1f5f9; }
-
-        .big-vf { font-size: 1.4rem; color: #ef4444; font-weight: 800; } 
-        .big-vc { font-size: 1.2rem; color: #1e293b; font-weight: 700; } 
+        
+        .value { 
+            font-weight: 700; 
+            color: var(--text); 
+        } 
         .capped { color: var(--danger); }
         
-        /* Detail Box */
+        /* Details section */
         .details-box {
             background: var(--card); 
             border-radius: 10px;
             padding: 15px;
             margin-top: 20px;
-            border: 1px solid var(--border);
+            border: 1px solid #d1fae5; 
             font-size: 0.9rem;
             line-height: 1.5;
             color: var(--text-light);
+        }
+        body.dark .details-box {
+            background: #1e293b; 
+            border: 1px solid #065f46; 
         }
         .details-box p {
             margin: 4px 0;
@@ -118,6 +133,16 @@
         }
 
         .warning-text { font-size:0.88rem; color:var(--warning); margin-top:12px; text-align:center; }
+        
+        /* FOOTER OUTSIDE CONTAINER */
+        footer { 
+             text-align: center;
+             margin-top: 20px; 
+             padding: 15px 0;
+             color: var(--text-light); 
+             font-size: 0.95em;        
+             width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -134,12 +159,12 @@
         <div class="form-group">
             <label for="material_group">Material Group</label>
             <select id="material_group">
-                <option value="P2">P2.x (Low Alloy Steel)</option>
-                <option value="M1">M1.x (Stainless Steel)</option>
-                <option value="P3">P3 (High Alloy Tool Steel)</option>
-                <option value="T44">T44 (High Strength)</option>
-                <option value="K1">K1 (Cast Iron)</option>
-                <option value="N1">N1.x (Aluminum)</option>
+                <option value="P2">Steel: Soft (< 1100 N/mm²)</option>
+                <option value="M1">Stainless: Austenitic (< 850 N/mm²)</option>
+                <option value="P3">Steel: Hard (> 1100 N/mm²)</option>
+                <option value="T44">Steel: Toolox 44 (< 50 HRC)</option>
+                <option value="K1">Gjutjärn (Cast Iron)</option>
+                <option value="N1">Aluminum</option>
             </select>
         </div>
 
@@ -170,12 +195,7 @@
         </div>
 
         <div class="form-group">
-            <label for="ae_percent">Radial Engagement (ae % of D)</label>
-            <input type="number" id="ae_percent" step="5" value="70">
-        </div>
-
-        <div class="form-group">
-            <label for="n_max">Machine Max RPM</label>
+            <label for="n_max">Machine Max Spindle Speed (RPM)</label>
             <input type="number" id="n_max" step="100" value="10000">
         </div>
 
@@ -189,7 +209,7 @@
             <select id="kappa">
                 <option value="90">90° (Shoulder Milling)</option>
                 <option value="75">75°</option>
-                <option value="45" selected>45° (Standard Face Milling)</option>
+                <option value="45" selected>45° (Standard)</option>
                 <option value="25">25° (High Feed)</option>
                 <option value="10">10° (Extreme High Feed)</option>
             </select>
@@ -209,17 +229,22 @@
     </main>
 </div>
 
+<footer>
+    <p>Face Milling Data Calculator Pro – created by Jimmy Rauhala</p>
+</footer>
+
 <script>
+    // UPDATED MATERIAL NAMES
     const materialData = {
-        'P2': { vc: 176, hm: 0.15, name: 'P2.x (Low Alloy Steel)' },
-        'M1': { vc: 120, hm: 0.12, name: 'M1.x (Stainless Steel)' },
-        'P3': { vc: 96,  hm: 0.12, name: 'P3 (High Alloy Tool Steel)' },
-        'T44':{ vc: 80,  hm: 0.10, name: 'T44 (High Strength)' },
-        'K1': { vc: 240, hm: 0.25, name: 'K1 (Cast Iron)' },
-        'N1': { vc:1200, hm: 0.30, name: 'N1.x (Aluminum)' }
+        'P2': { vc: 176, hm: 0.15, name: 'Steel: Soft (< 1100 N/mm²)' },
+        'M1': { vc: 120, hm: 0.12, name: 'Stainless: Austenitic (< 850 N/mm²)' },
+        'P3': { vc: 96,  hm: 0.12, name: 'Steel: Hard (> 1100 N/mm²)' },
+        'T44':{ vc: 80,  hm: 0.10, name: 'Steel: Toolox 44 (< 50 HRC)' },
+        'K1': { vc: 240, hm: 0.25, name: 'Gjutjärn (Cast Iron)' },
+        'N1': { vc:1200, hm: 0.30, name: 'Aluminum' }
     };
 
-    const inputIds = ['vc','hm','D','Z','ap','ae_percent','n_max','kappa','R'];
+    const inputIds = ['vc','hm','D','Z','ap','n_max','kappa','R'];
 
     function loadMaterialData() {
         const sel = document.getElementById('material_group').value;
@@ -247,12 +272,11 @@
         results.classList.remove('ready');
 
         // 1. Get input values
-        const vc_input = parseFloat(document.getElementById('vc').value) || 0;
+        const vc = parseFloat(document.getElementById('vc').value) || 0;
         const hm = parseFloat(document.getElementById('hm').value) || 0;
         const D  = parseFloat(document.getElementById('D').value)  || 0;
         const Z  = parseInt(document.getElementById('Z').value)   || 0;
         const ap = parseFloat(document.getElementById('ap').value) || 0;
-        const ae_pct = parseFloat(document.getElementById('ae_percent').value) || 0;
         const n_max = parseFloat(document.getElementById('n_max').value) || Infinity;
         const geoType = document.querySelector('.geo-btn.active').dataset.geo;
 
@@ -260,21 +284,19 @@
         document.getElementById('ap-note').textContent = '';
         document.getElementById('radius-warning').textContent = '';
         
-        const materialName = materialData[document.getElementById('material_group').value].name;
-
         // Validation
-        if (!vc_input || !hm || !D || !Z || !ae_pct || D <= 0 || Z <= 0) {
+        if (!vc || !hm || !D || !Z || D <= 0 || Z <= 0) {
             results.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:20px 0;">Fill in all fields with valid numbers</p>';
             return;
         }
 
-        // 2. Calculate RPM (n) - Theoretical & Capped
-        let n_theoretical = (vc_input * 1000) / (Math.PI * D);
+        // 2. Calculate Spindle Speed (n) - Theoretical & Capped
+        let n_theoretical = (vc * 1000) / (Math.PI * D);
         let n = n_theoretical;
         let capped = false;
         if (n > n_max) { n = n_max; capped = true; }
 
-        // 3. Calculate Feed per Tooth (fz)
+        // 3. Calculate Feed per tooth (fz)
         let fz = 0;
         
         if (geoType === 'kappa') {
@@ -286,14 +308,15 @@
             const R = parseFloat(document.getElementById('R').value) || 0;
             
             if (!R || R <= 0 || !ap) {
-                fz = hm;
-                document.getElementById('ap-note').textContent = 'WARNING: Depth of Cut (ap) and Radius (R) are required for correct fz values.';
+                fz = hm; 
+                document.getElementById('ap-note').textContent = 'WARNING: Depth of Cut (ap) and Radius (R) must be specified for correct fz values.';
             } else {
                 
                 if (ap > R) {
-                    document.getElementById('radius-warning').textContent = `Warning: ap (${ap}mm) > R (${R}mm) → chip thinning is drastically reduced!`;
+                    document.getElementById('radius-warning').textContent = `Warning: ap (${ap}mm) > R (${R}mm) → chip thinning significantly reduced!`;
                 }
                 
+                // Formula for effective kappa angle (sin(kappa_eff) = sqrt((ap/R) * (1 - ap/(2R))))
                 const sin_kappa_sq = (ap / R) * (1 - ap/(2*R));
                 const sin_kappa = sin_kappa_sq > 0 ? Math.sqrt(sin_kappa_sq) : 0;
                 
@@ -302,34 +325,33 @@
         }
 
         // 4. Final Results
-        // Round Vf to the nearest integer for machine input simplicity
-        const vf = Math.round(fz * Z * n); 
-        const ae_mm = (ae_pct / 100) * D;
-        const fz_rounded = fz.toFixed(3);
+        const vf = Math.round(fz * Z * n);
 
-        // 5. Display results
+        // 5. Display Results
         results.classList.add('ready');
         results.innerHTML = `
             <h2>Cutting Data – Milling</h2>
             
-            <div class="result-line"><strong>Spindle Speed (n)</strong> <span class="value ${capped?'capped':''}">${Math.round(n).toLocaleString('en')} RPM ${capped?'*':''}</span></div>
-            <div class="result-line"><strong>FEED RATE (Vf)</strong> <span class="big-vf">${vf.toLocaleString('en')} mm/min</span></div>
-            <div class="result-line"><strong>Used Vc</strong> <span class="big-vc">${vc_input} m/min</span></div>
+            <div class="result-line"><strong>Spindle Speed [rpm]:</strong> <span class="value ${capped?'capped':''}">${Math.round(n).toLocaleString('en')} ${capped?'*':''}</span></div>
+            <div class="result-line"><strong>Feed [mm/min]:</strong> <span class="value">${vf.toLocaleString('en')}</span></div>
             
             <div class="details-box">
                 <p>
-                    <span class="detail-label">Material:</span>
-                    <span class="detail-value">${materialName}</span>
+                    <span class="detail-label">Vc:</span>
+                    <span class="detail-value">${vc.toFixed(0)} m/min</span>
                 </p>
+                
                 <p>
-                    <span class="detail-label">Feed per Tooth (fz):</span>
-                    <span class="detail-value">${fz_rounded} mm/tooth</span>
+                    <span class="detail-label">fz:</span>
+                    <span class="detail-value">${fz.toFixed(2)} mm/tooth</span>
                 </p>
+                
                 <p>
-                    <span class="detail-label">Radial Engagement (ae):</span>
-                    <span class="detail-value">${ae_mm.toFixed(1)} mm (${ae_pct} % of D)</span>
+                    <span class="detail-label">ae:</span>
+                    <span class="detail-value">60–70 %</span>
                 </p>
-                ${capped ? '<p class="warning-text" style="color: var(--danger); margin: 8px 0;">* RPM is limited by machine max-RPM</p>' : ''}
+
+                ${capped ? '<p class="warning-text" style="color: var(--danger); margin: 8px 0;">* Spindle speed is capped by Max-RPM</p>' : ''}
             </div>
         `;
     }
@@ -347,22 +369,24 @@
     });
     document.getElementById('kappa').addEventListener('change', calculate); 
 
-    // Theme
+    // Theme (Uses Sun and Moon icons)
     const toggle = document.getElementById('themeToggle');
+    const updateThemeIcon = () => {
+        toggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+    };
+
     toggle.addEventListener('click', () => {
         document.body.classList.toggle('dark');
-        toggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+        updateThemeIcon();
     });
-    // Check system preference on load
+    // Check system theme on load
     if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.body.classList.add('dark');
-        toggle.textContent = '☀️';
-    } else {
-        toggle.textContent = '🌙';
     }
+    updateThemeIcon();
 
 
-    // Start the calculator on load
+    // Start calculator on load
     window.onload = function() {
         loadMaterialData();
         toggleGeometry(null); 
