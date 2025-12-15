@@ -8,71 +8,15 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="/Milling_Drilling_Cutting_Data_Calculators/icon-192.png" sizes="192x192" type="image/png">
     
+    <link rel="stylesheet" href="kalkylatorer/style.css"> 
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* === TEMAVARIABLER (Primary for landing page) === */
-        :root {
-            --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --text-light: #64748b;
-            --primary: #3b82f6; --primary-light: #dbeafe; --border: #e2e8f0; 
-            --shadow: 0 10px 20px rgba(0,0,0,0.05); --radius: 16px;
-        }
-        @media (prefers-color-scheme: dark) {
-            :root { --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --text-light: #94a3b8;
-                    --border: #334155; --shadow: 0 2px 4px rgba(0,0,0,0.4); }
-        }
-
-        /* === GLOBAL LAYOUT === */
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); padding:0; transition:background .4s; }
-        .app-container { max-width:600px; margin:0 auto; display:flex; flex-direction:column; min-height:100vh; }
-        
-        /* === HEADER === */
-        header { background:linear-gradient(135deg,#667eea,#764ba2); color:white; padding:30px 20px; text-align:center; }
-        .logo-text { font-size:1.8rem; font-weight:700; margin-bottom: 5px; }
-        .subtitle { font-size: 1rem; opacity: 0.9; }
-
-        /* === CALCULATOR LIST === */
-        .calculator-list { padding:20px; flex-grow:1; background:var(--bg); }
-        .calc-item { display:block; text-decoration:none; color:inherit; 
-                     background:var(--card); border:1px solid var(--border);
-                     padding:16px 20px; margin-bottom:12px; border-radius:var(--radius);
-                     transition:background .2s, border-color .2s, transform .1s;
-                     display: flex; justify-content: space-between; align-items: center;
-                     box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        
-        .calc-item:hover { background:var(--primary-light); border-color:var(--primary); transform: translateY(-1px); }
-        .calc-item:active { transform: translateY(0); }
-        
-        /* FÖRSTÄRKT FIX FÖR ATT TA BORT KVARSTÅENDE MARKERING VID BACK */
-        /* Nollställer färgen på besökta länkar (viktigt på mobil) */
-        .calc-item:visited { color: inherit; } 
-        .calc-item:visited span { color: var(--text); } 
-        /* Tvingar bakgrunden och kanten till normalt läge vid fokus/back-navigering */
-        .calc-item:focus { 
-            outline: none; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            background: var(--card) !important; 
-            border-color: var(--border) !important;
-        } 
-        
-        .calc-item span { font-weight: 600; font-size: 1.1rem; }
-        .calc-item::after { content: '→'; font-size: 1.5rem; color: var(--primary); }
-        
-        /* === FOOTER STYLE === */
-        .footer-text {
-            text-align: center;
-            padding: 20px 20px 30px;
-            font-size: 0.8rem;
-            color: var(--text-light);
-            border-top: 1px solid var(--border); 
-            margin-top: 20px;
-        }
-    </style>
 </head>
 <body>
 
     <div class="app-container">
+        
+        <button class="theme-toggle" id="themeToggle">☀️</button> 
         
         <header>
             <div class="logo-text">Cutting Data PRO</div>
@@ -80,36 +24,56 @@
         </header>
 
         <div class="calculator-list">
-    
-    <a href="kalkylatorer/Face_Milling_Data_Calculator-Pro.html" class="calc-item">
-        <span>Face Milling Data Calculator</span>
-    </a>
-    
-    <a href="kalkylatorer/Drilling_Data_Calculator-Pro.html" class="calc-item">
-        <span>Drilling Data Calculator</span>
-    </a>
-    
-    <a href="kalkylatorer/Milling_Data_Calculator-Pro.html" class="calc-item">
-        <span>Dynamic Milling Data Calculator</span>
-    </a>
+            
+            <a href="kalkylatorer/Face_Milling_Data_Calculator-Pro.html" class="calc-item">
+                <span>Face Milling Data Calculator</span>
+            </a>
+            
+            <a href="kalkylatorer/Drilling_Data_Calculator-Pro.html" class="calc-item">
+                <span>Drilling Data Calculator</span>
+            </a>
+            
+            <a href="kalkylatorer/Milling_Data_Calculator-Pro.html" class="calc-item">
+                <span>Dynamic Milling Data Calculator</span>
+            </a>
 
-    <a href="kalkylatorer/Chamfer_Data_Calculator-Pro.html" class="calc-item">
-        <span>Chamfer Data Calculator</span>
-    </a>
-    
-    <a href="kalkylatorer/T-slot_Milling_Data_Calculator-Pro.html" class="calc-item">
-        <span>T-slot Milling Data Calculator</span>
-    </a>
+            <a href="kalkylatorer/Chamfer_Data_Calculator-Pro.html" class="calc-item">
+                <span>Chamfer Data Calculator</span>
+            </a>
+            
+            <a href="kalkylatorer/T-slot_Milling_Data_Calculator-Pro.html" class="calc-item">
+                <span>T-slot Milling Data Calculator</span>
+            </a>
 
-</div>
-
-        <div class="footer-text">
-            Milling machining Calculators Pro – created by Jimmy Rauhala
         </div>
-        
-    </div>
 
+    </div>
+    <footer>
+        Milling machining Calculators Pro – created by Jimmy Rauhala
+    </footer>
+    
 <script>
+    // === TEMAVÄXLING LOGIK ===
+    const themeToggle = document.getElementById('themeToggle');
+
+    const updateThemeIcon = () => {
+        // Visar Solen (☀️) om vi är i mörkt läge, annars Månen (🌙)
+        themeToggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+    };
+
+    const loadTheme = () => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+        } else if (savedTheme === 'light') {
+            document.body.classList.remove('dark');
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            // Fallback: Använd systemets preferens om inget tema är sparat
+            document.body.classList.add('dark');
+        }
+        updateThemeIcon(); 
+    };
+
     // === SERVICE WORKER REGISTRATION (PWA) ===
     function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
@@ -126,9 +90,22 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', registerServiceWorker);
+    document.addEventListener('DOMContentLoaded', () => {
+        // Ladda tema och ställ in eventlyssnare FÖRST
+        if (themeToggle) {
+            loadTheme(); 
+            
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark');
+                const newTheme = document.body.classList.contains('dark') ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon();
+            });
+        }
+        
+        // Registrera Service Worker (PWA) EFTERÅT
+        registerServiceWorker();
+    });
 </script>
 </body>
 </html>
-
-

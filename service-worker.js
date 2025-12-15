@@ -1,80 +1,75 @@
-// Fil: service-worker.js
+// Service Worker Cache-konfiguration
+const CACHE_NAME = 'cutting-data-pro-cache-v1.0.0'; 
+// OBS! Uppdatera versionsnumret varje gång du gör en ändring i filerna nedan!
 
-// 1. DEFINIERA CACHENAMN OCH FILER
-const CACHE_NAME = 'skardata-pwa-v10-add-tslot'; // VIKTIGT: Ny version v10!
-const BASE_PATH = '/Milling_Drilling_Cutting_Data_Calculators'; 
-
-// Alla filer som appen behöver för att fungera offline
+// Lista över alla filer som ska cachas initialt (App Shell)
 const urlsToCache = [
-    // Huvudsidor
-    BASE_PATH + '/', 
-    BASE_PATH + '/index.html',
-    BASE_PATH + '/manifest.json',
+    // Rötfiler (Index och Ikon)
+    '/Milling_Drilling_Cutting_Data_Calculators/', // Startsidans rot (viktig för offline-stöd)
+    '/Milling_Drilling_Cutting_Data_Calculators/index.html',
+    '/Milling_Drilling_Cutting_Data_Calculators/manifest.json',
+    '/Milling_Drilling_Cutting_Data_Calculators/icon-192.png',
     
-    // Ikoner
-    BASE_PATH + '/icon-192.png',
-    BASE_PATH + '/icon-512.png', 
+    // CSS och JS (Kalkylatorgemensamt)
+    '/Milling_Drilling_Cutting_Data_Calculators/kalkylatorer/style.css',
     
-    // Fonts (extern)
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+    // Kalkylatorer (HTML och specifik JS)
+    '/Milling_Drilling_Cutting_Data_Calculators/kalkylatorer/Drilling_Data_Calculator-Pro.html',
+    '/Milling_Drilling_Cutting_Data_Calculators/kalkylatorer/Milling_Data_Calculator-Pro.html',
+    '/Milling_Drilling_Cutting_Data_Calculators/kalkylatorer/Face_Milling_Data_Calculator-Pro.html',
+    '/Milling_Drilling_Cutting_Data_Calculators/kalkylatorer/Chamfer_Data_Calculator-Pro.html',
+    '/Milling_Drilling_Cutting_Data_Calculators/kalkylatorer/T-slot_Milling_Data_Calculator-Pro.html',
     
-    // Kalkylatorfragment (Uppdaterad lista v10)
-    BASE_PATH + '/kalkylatorer/Face_Milling_Data_Calculator-Pro.html',
-    BASE_PATH + '/kalkylatorer/Drilling_Data_Calculator-Pro.html',
-    BASE_PATH + '/kalkylatorer/Milling_Data_Calculator-Pro.html',
-    BASE_PATH + '/kalkylatorer/Chamfer_Data_Calculator-Pro.html',
-    BASE_PATH + '/kalkylatorer/T-slot_Milling_Data_Calculator-Pro.html' // <--- DEN NYA FILEN
+    // Lägg till alla JS-filer som innehåller rådata (exempelvis drilling_tool_data.js)
+    '/Milling_Drilling_Cutting_Data_Calculators/kalkylatorer/drilling_tool_data.js', 
+    // ... Lägg till andra JS-filer här ...
 ];
 
-// 2. INSTALLERA SERVICE WORKER OCH CACHA STATISKA TILLGÅNGAR
+/* * 1. INSTALLATION: Cachning av alla filer i urlsToCache
+ * Körs första gången service workern registreras.
+ */
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache, adding essential files (v10).');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        return self.skipWaiting();
-      })
-      .catch(error => {
-        console.error('Caching failed:', error);
-      })
-  );
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Service Worker: Filer cachade framgångsrikt');
+                return cache.addAll(urlsToCache);
+            })
+    );
 });
 
-// 3. HANTERA HÄMTNING AV FILER (FETCH)
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-  
-  // Cache-first strategi
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      })
-  );
-});
-
-// 4. TA BORT GAMLA CACHAR VID UPPGRADERING
+/* * 2. AKTIVERING: Tar bort gamla cacher
+ * Detta säkerställer att användare får den senaste versionen av appen.
+ */
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('Service Worker: Tar bort gammal cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
         })
-      );
-    })
-  );
+    );
+});
+
+/* * 3. HÄMTNING/FETCH: Serverar cachade filer
+ * Försöker först hitta resursen i cachen. Om den inte hittas, hämtas den från nätverket.
+ */
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => {
+                // Returnerar cachad kopia om den finns
+                if (response) {
+                    return response;
+                }
+                
+                // Om den inte finns i cachen, hämta från nätverket
+                return fetch(event.request);
+            })
+    );
 });
