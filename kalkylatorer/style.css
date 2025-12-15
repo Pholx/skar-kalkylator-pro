@@ -393,7 +393,8 @@ body.dark .mode-selector input[type="radio"]:hover + label {
 /* Global layout för startsidan: Gör den till ett kort */
 .app-container { 
     max-width:650px; 
-    margin: 20px auto 30px; /* Centrerar horisontellt, 30px marginal under kortet */
+    /* ÄNDRING 1: Matchar .container marginal: 20px auto */
+    margin: 20px auto; 
     display:flex; 
     flex-direction:column; 
     
@@ -409,9 +410,10 @@ body.dark .mode-selector input[type="radio"]:hover + label {
 .app-container header { 
     background:linear-gradient(135deg,#667eea,#764ba2); 
     color:white; 
-    padding:30px 24px; /* Ökat padding för att matcha kalkylatorerna */
+    padding:30px 24px; 
     text-align:center; 
-    margin-bottom: 20px;
+    /* ÄNDRING 2: Borttagen/ändrad margin-bottom för att matcha kalkylatorsidorna */
+    margin-bottom: 0; 
 }
 .logo-text { 
     font-size:1.8rem; 
@@ -425,7 +427,8 @@ body.dark .mode-selector input[type="radio"]:hover + label {
 
 /* === CALCULATOR LIST === */
 .calculator-list { 
-    padding: 0 24px; /* Använder samma horisontella padding som main */
+    /* ÄNDRING 3: Lägger till 32px padding uppe/nere för att matcha kalkylatorns "main" padding */
+    padding: 32px 24px; 
     flex-grow:1; 
     background:var(--card); 
 }
@@ -446,7 +449,8 @@ body.dark .mode-selector input[type="radio"]:hover + label {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
 }
 .calc-item:last-child {
-    margin-bottom: 30px; /* Extra marginal under sista elementet, före footern */
+    /* Denna marginal är kvar för att ge lite extra utrymme före footern */
+    margin-bottom: 30px; 
 }
 .calc-item:hover { 
     background:var(--primary-light); 
